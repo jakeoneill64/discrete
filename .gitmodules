@@ -1,3 +1,17 @@
 [submodule "modules/jsoncpp"]
 	path = modules/jsoncpp
-	url = https://github.com/open-source-parsers/jsoncpp
+	url = git@github.com:open-source-parsers/jsoncpp.git
+
+[submodule "modules/glfw"]
+	path = modules/glfw
+	url = git@github.com:glfw/glfw.git
+	branch = 3.3-stable
+
+[submodule "modules/glad"]
+	path = modules/glad
+	url = git@github.com:Dav1dde/glad.git
+	branch = glad2
+
+[submodule "modules/glm"]
+	path = modules/glm
+	url = git@github.com:g-truc/glm.git

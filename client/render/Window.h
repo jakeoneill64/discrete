@@ -10,6 +10,8 @@ namespace Render {
     class Window {
     public:
 
+        void open();
+
     private:
 
     };
