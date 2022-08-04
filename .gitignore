@@ -1,6 +1,7 @@
 lib/*
 include/*
-modules/glm
-modules/glfw
-modules/glad
-modules/jsoncpp
+.idea
+CMakeFiles
+cmake-build-debug
+Makefile
+CMakeCache.txt
