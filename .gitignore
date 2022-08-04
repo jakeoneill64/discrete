@@ -1,0 +1,6 @@
+lib/*
+include/*
+modules/glm
+modules/glfw
+modules/glad
+modules/jsoncpp
