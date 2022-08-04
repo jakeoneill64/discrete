@@ -3,7 +3,7 @@
 //
 
 #include "Window.h"
-#include "/Users/jake/Dev/mroneillscubes/modules/glfw/include/GLFW/glfw3.h"
+#include <glad.h>
 
 void Render::Window::open() {
 
