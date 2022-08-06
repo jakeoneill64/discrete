@@ -29,19 +29,17 @@ done
 
 rm -fr ../lib/* ../include/*
 
-
-# TODO add branch verification
-
-mkdir ../include/glad ../include/glfw ../include/gml ../include/json
+mkdir  ../include/gml ../include/json
 
 mv glad/libglad.a ../lib
-mv glad/include/glad/glad.h ../include/glad/
+mv glad/include/glad/ ../include/
+mv glad/include/KHR ../include/
 
 mv glfw/src/libglfw3.a ../lib
-mv glfw/include/GLFW/glfw3.h ../include/glfw
+mv glfw/include/GLFW/ ../include
 
 mv glm/glm/libglm_static.a ../lib
 mv glm/glm/*.hpp ../include/gml
 
 mv jsoncpp/lib/libjsoncpp.a ../lib
-mv jsoncpp/include/json/*.h ../include/json
+mv jsoncpp/include/json/ ../include

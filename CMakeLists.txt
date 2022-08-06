@@ -7,3 +7,4 @@ add_executable(mroneillscubes client/Main.cpp server/Server.cpp server/Server.h 
 
 link_libraries(mroneillscubes lib/libglad.a lib/libglfw3.a lib/libglm_static.a lib/libjsoncpp.a)
 include_directories(${CMAKE_SOURCE_DIR}/include)
+
