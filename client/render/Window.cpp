@@ -3,7 +3,7 @@
 //
 
 #include "Window.h"
-#include <glad.h>
+#include <glad/glad.h>
 
 void Render::Window::open() {
 
