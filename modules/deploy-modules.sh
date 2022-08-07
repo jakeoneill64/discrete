@@ -29,7 +29,7 @@ done
 
 rm -fr ../lib/* ../include/*
 
-mkdir  ../include/gml ../include/json
+mkdir  ../include/gml
 
 mv glad/libglad.a ../lib
 mv glad/include/glad/ ../include/
