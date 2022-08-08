@@ -16,7 +16,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 
-add_executable(mroneillscubes client/Main.cpp server/Server.cpp server/Server.h server/business/World.h server/business/World.cpp server/business/Voxel.cpp server/business/Voxel.h client/render/config/GLConfig.h client/render/config/GLConfig.cpp client/render/RenderClient.h client/render/RenderClient.cpp)
+add_executable(mroneillscubes client/Main.cpp server/Server.cpp server/Server.h server/business/World.h server/business/World.cpp server/business/Voxel.cpp server/business/Voxel.h client/render/RenderConfiguration.h client/render/RenderClient.h client/render/RenderClient.cpp)
 
 
 

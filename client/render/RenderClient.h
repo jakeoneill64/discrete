@@ -5,14 +5,16 @@
 #ifndef MRONEILLSCUBES_RENDERCLIENT_H
 #define MRONEILLSCUBES_RENDERCLIENT_H
 
-#include "config/GLConfig.h"
+#include "RenderConfiguration.h"
+#include <memory>
 
 class RenderClient{
 public:
-    explicit RenderClient(GLConfig config);
+    explicit RenderClient(RenderConfiguration config);
     ~RenderClient();
 
 private:
+    std::unique_ptr<GLFWwindow> m_window;
     void renderLoop();
 };
 

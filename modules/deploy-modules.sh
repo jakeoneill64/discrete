@@ -1,5 +1,12 @@
 #!/bin/bash
 
+echo ${BASH_SOURCE[0]}
+
+if [[ $(pwd) != $(dirname "${BASH_SOURCE[0]}") ]]; then
+  echo you must be in the modules directory to run this script.
+  exit 1
+fi
+
 sed=sed
 
 git submodule foreach git reset --hard
