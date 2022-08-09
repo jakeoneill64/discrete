@@ -4,7 +4,7 @@ project(mroneillscubes)
 set(CMAKE_CXX_STANDARD 23)
 link_directories(lib)
 
-link_libraries( libglad.a libglfw3.a libglm_static.a libjsoncpp.a)
+link_libraries(libglad.a libglfw3.a libglm_static.a libjsoncpp.a libboost_log.a)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -12,7 +12,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_library(OPEN_GL_LIB OpenGl REQUIRED)
     find_library(IOKIT_LIB IOKit REQUIRED)
     find_library(CORE_VIDEO_LIB CoreVideo REQUIRED)
-    link_libraries(${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
+    link_libraries(libboost_unit_test_framework.dylib ${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
 endif()
 
 

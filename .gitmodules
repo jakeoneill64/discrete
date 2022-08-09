@@ -16,12 +16,7 @@
 	path = modules/glm
 	url = git@github.com:g-truc/glm.git
 
-[submodule "modules/log"]
-	path = modules/log
-	url = git@github.com:boostorg/log.git
-	branch = master
-
-[submodule "modules/test"]
-	path = modules/test
-	url = git@github.com:boostorg/test.git
+[submodule "modules/boost"]
+	path = modules/boost
+	url = https://github.com/boostorg/boost.git
 	branch = master

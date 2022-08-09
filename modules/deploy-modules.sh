@@ -1,33 +1,30 @@
 #!/bin/bash
 
-echo ${BASH_SOURCE[0]}
+CURRENT_DIR="$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)"
 
-if [[ $(pwd) != $(dirname "${BASH_SOURCE[0]}") ]]; then
+if [[ $(pwd) != $CURRENT_DIR ]]; then
   echo you must be in the modules directory to run this script.
   exit 1
 fi
 
-sed=sed
-
+git clean -xfdf
 git submodule foreach git reset --hard
+git submodule foreach git clean -xfdf
+git submodule foreach init
+git submodule foreach update
+
+sed=sed
 
 if [[ $(uname) == "Darwin" ]]; then
    sed=gsed #lets not bother with bsd sed
 fi
-
-for d in *
-do
-  [[ -d "${d}" ]] || continue
-  cd $d
-  git clean -fd
-  cd ..
-done
 
 $sed -i"" "81,82d" jsoncpp/CMakeLists.txt #remove the lines which prevent us from building in place.
 
 for d in *
 do
   [[ -d "${d}" ]] || continue
+  [[ "${d}" == "boost" ]] && continue
   cd $d
   cmake .
   make
@@ -36,6 +33,18 @@ done
 
 rm -fr ../lib/* ../include/*
 
+echo building boost
+cd boost/
+git clean -xfdf
+git submodule foreach git reset --hard
+git submodule foreach git clean -xfdf
+git submodule init
+git submodule update
+./bootstrap.sh
+./b2 --with-json --with-log --with-test
+cd ..
+
+echo deploying libraries
 mkdir  ../include/gml
 
 mv glad/libglad.a ../lib
@@ -50,3 +59,15 @@ mv glm/glm/*.hpp ../include/gml
 
 mv jsoncpp/lib/libjsoncpp.a ../lib
 mv jsoncpp/include/json/ ../include
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  mv boost/stage/lib/libboost_unit_test_framework.dylib ../lib
+else
+  mv boost/stage/lib/libboost_unit_test_framework.so ../lib
+fi
+mv boost/boost/test ../include
+
+mv boost/stage/lib/libboost_log.a ../lib
+mv boost/boost/log ../include
+
+
