@@ -8,14 +8,22 @@
 #include "RenderConfiguration.h"
 #include <memory>
 
-class RenderClient{
-public:
-    explicit RenderClient(RenderConfiguration config);
-    ~RenderClient();
+namespace Render {
 
-private:
-    std::unique_ptr<GLFWwindow> m_window;
-    void renderLoop();
-};
+    class RenderClient {
+    public:
+        explicit RenderClient(RenderConfiguration& config);
+        RenderClient(const RenderClient&) = delete;
+        RenderClient& operator=(RenderClient&) = delete;
+        ~RenderClient() = default;
+
+    private:
+        std::unique_ptr<GLFWwindow> m_window;
+
+        static void onResize(GLFWwindow* window, int width, int height);
+        void renderLoop();
+    };
+
+}
 
 #endif //MRONEILLSCUBES_RENDERCLIENT_H

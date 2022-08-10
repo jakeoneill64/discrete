@@ -10,19 +10,26 @@
 #include "GLFW/glfw3.h"
 #include <string>
 
+namespace Render {
 
-// TODO overhaul this temp class.
-class RenderConfiguration{
+    class RenderConfiguration {
 
-public :
-    static constexpr uint32_t glMajorVersion = uint32_t {3};
-    static constexpr uint32_t glMinorVersion = uint32_t {3};
-    static constexpr uint32_t glProfile = uint32_t{GLFW_OPENGL_CORE_PROFILE};
-    static constexpr uint32_t glForwardCompatible = uint32_t {GL_TRUE};
-    static constexpr uint16_t windowStartWidth = uint16_t {800};
-    static constexpr uint16_t windowStartHeight = uint16_t {600};
-    static constexpr char *const windowName = "";
+    public :
 
-};
+        RenderConfiguration(int glMajorVersion, int glMinorVersion, int glForwardCompatible,
+                            int windowStartWidth, int windowStartHeight, std::string windowName, int glProfile);
+
+        const int glMajorVersion;
+        const int glMinorVersion;
+        const int glForwardCompatible;
+        const int glProfile;
+        const int windowStartWidth;
+        const int windowStartHeight;
+        const std::string windowName;
+
+
+    };
+
+}
 
 #endif //MRONEILLSCUBES_RENDERCONFIGURATION_H
