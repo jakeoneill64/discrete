@@ -8,6 +8,11 @@
 #include "RenderConfiguration.h"
 #include <memory>
 
+struct GLFWwindow{
+    ~GLFWwindow() = default;
+};
+
+
 namespace Render {
 
     class RenderClient {

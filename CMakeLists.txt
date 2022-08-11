@@ -13,6 +13,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 link_libraries(libglad.a libglfw3.a libglm_static.a libjsoncpp.a libboost_log.a)
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 
