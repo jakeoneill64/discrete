@@ -6,6 +6,7 @@
 #define MRONEILLSCUBES_RENDERCLIENT_H
 
 #include "RenderConfiguration.h"
+#include "Camera.h"
 #include <memory>
 
 struct GLFWwindow{
@@ -17,6 +18,7 @@ namespace Render {
 
     class RenderClient {
     public:
+        void setActiveCamera(Camera* camera);
         explicit RenderClient(RenderConfiguration& config);
         RenderClient(const RenderClient&) = delete;
         RenderClient& operator=(RenderClient&) = delete;
@@ -24,6 +26,7 @@ namespace Render {
 
     private:
         std::unique_ptr<GLFWwindow> m_window;
+        Camera* m_activeCamera;
 
         static void onResize(GLFWwindow* window, int width, int height);
         void renderLoop();

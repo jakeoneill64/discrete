@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#TODO we need to make the module versions constant.
+
 CURRENT_DIR="$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)"
 
 if [[ $(pwd) != $CURRENT_DIR ]]; then
@@ -45,7 +47,7 @@ git submodule update
 cd ..
 
 echo deploying libraries
-mkdir  ../include/gml
+mkdir  ../include/glm
 
 mv glad/libglad.a ../lib
 mv glad/include/glad/ ../include/
@@ -55,7 +57,12 @@ mv glfw/src/libglfw3.a ../lib
 mv glfw/include/GLFW/ ../include
 
 mv glm/glm/libglm_static.a ../lib
-mv glm/glm/*.hpp ../include/gml
+mv glm/glm/*.hpp ../include/glm
+mv glm/glm/gtc ../include/glm
+mv glm/glm/detail ../include/glm
+mv glm/glm/ext ../include/glm
+mv glm/glm/gtx ../include/glm
+mv glm/glm/simd ../include/glm
 
 mv jsoncpp/lib/libjsoncpp.a ../lib
 mv jsoncpp/include/json/ ../include

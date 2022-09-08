@@ -5,4 +5,14 @@
 #ifndef MRONEILLSCUBES_VOXEL_H
 #define MRONEILLSCUBES_VOXEL_H
 
+#include <cfloat>
+
+class Voxel{
+public:
+private:
+
+
+
+};
+
 #endif //MRONEILLSCUBES_VOXEL_H

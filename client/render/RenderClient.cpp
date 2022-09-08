@@ -31,7 +31,7 @@ Render::RenderClient::RenderClient(RenderConfiguration& config) {
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        //TODO do something.. glad didn't load GL function pointers
+        throw std::runtime_error("could not load the OpenGL function pointers");
     }
 
     // render loop
@@ -57,8 +57,17 @@ Render::RenderClient::RenderClient(RenderConfiguration& config) {
     glfwTerminate();
 }
 
+
 void Render::RenderClient::onResize(GLFWwindow *window, int width, int height) {
 
+}
+
+void Render::RenderClient::renderLoop() {
+
+}
+
+void Render::RenderClient::setActiveCamera(Camera *camera) {
+    m_activeCamera = camera;
 }
 
 
