@@ -100,6 +100,22 @@ fi
 #clean install
 rm -fr ../lib/* ../include/*
 
+
+
+
+
+#         (
+#    (     )
+#    )    (
+#    (   _ )  ))
+# ,-----' |  ((
+# | //  : |   )
+# | //  : | )/
+# | //  : |
+# `-----._|
+#  _/___\_
+# [_______]
+
 buildBoost &
 buildGlad &
 buildGlfw &
