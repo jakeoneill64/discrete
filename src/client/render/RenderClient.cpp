@@ -6,7 +6,10 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-Render::RenderClient::RenderClient(RenderConfiguration& config) {
+Render::RenderClient::RenderClient(RenderConfiguration& config, const Camera* const activeCamera):
+m_activeCamera{activeCamera}
+
+{
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, config.glMajorVersion);
@@ -59,7 +62,7 @@ Render::RenderClient::RenderClient(RenderConfiguration& config) {
 
 
 void Render::RenderClient::onResize(GLFWwindow *window, int width, int height) {
-
+    glViewport(0, 0, width, height);
 }
 
 void Render::RenderClient::renderLoop() {
@@ -69,6 +72,10 @@ void Render::RenderClient::renderLoop() {
 void Render::RenderClient::setActiveCamera(Camera *camera) {
     m_activeCamera = camera;
 }
+
+
+
+
 
 
 

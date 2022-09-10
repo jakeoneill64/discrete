@@ -17,7 +17,7 @@ link_libraries(libglad.a libglfw3.a libglm_static.a libjsoncpp.a libboost_log.a)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 
-add_executable(mroneillscubes client/Main.cpp server/Server.cpp server/Server.h server/business/World.h server/business/World.cpp server/business/Voxel.cpp server/business/Voxel.h client/render/RenderConfiguration.h client/render/RenderClient.h client/render/RenderClient.cpp client/render/RenderConfiguration.cpp client/render/Camera.h client/render/Camera.cpp)
+add_executable(mroneillscubes src/client/Main.cpp src/server/Server.cpp src/server/Server.h src/server/business/World.h src/server/business/World.cpp src/server/business/Voxel.cpp src/server/business/Voxel.h src/client/render/RenderConfiguration.h src/client/render/RenderClient.h src/client/render/RenderClient.cpp src/client/render/RenderConfiguration.cpp src/client/render/Camera.h src/client/render/Camera.cpp src/client/render/Shader.h src/client/render/Shader.cpp src/log/Logging.h)
 
 
 

@@ -1,0 +1,8 @@
+//
+// Created by Jake M O'Neill on 10/09/2022.
+//
+
+#ifndef MRONEILLSCUBES_LOGGING_H
+#define MRONEILLSCUBES_LOGGING_H
+
+#endif //MRONEILLSCUBES_LOGGING_H

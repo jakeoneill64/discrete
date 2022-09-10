@@ -26,7 +26,7 @@ namespace Render {
 
     private:
         std::unique_ptr<GLFWwindow> m_window;
-        Camera* m_activeCamera;
+        const Camera* m_activeCamera;
 
         static void onResize(GLFWwindow* window, int width, int height);
         void renderLoop();
