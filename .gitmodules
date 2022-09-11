@@ -20,3 +20,8 @@
 	path = modules/boost
 	url = https://github.com/boostorg/boost.git
 	branch = master
+
+[submodule "modules/spdlog"]
+	path = modules/spdlog
+	url = git@github.com:gabime/spdlog.git
+	branch = v1.x

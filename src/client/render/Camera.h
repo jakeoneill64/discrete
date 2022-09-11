@@ -11,8 +11,8 @@ public:
 
 private:
 
-    glm::vec3& m_position;
-    glm::vec3& m_targetPosition;
+    glm::vec3* m_position;
+    glm::vec3* m_targetPosition;
 
 };
 

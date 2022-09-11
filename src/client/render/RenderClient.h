@@ -19,7 +19,7 @@ namespace Render {
     class RenderClient {
     public:
         void setActiveCamera(Camera* camera);
-        explicit RenderClient(RenderConfiguration& config);
+        explicit RenderClient(RenderConfiguration& config, const Camera* const camera);
         RenderClient(const RenderClient&) = delete;
         RenderClient& operator=(RenderClient&) = delete;
         ~RenderClient() = default;

@@ -45,7 +45,7 @@ buildBoost(){
   git submodule init
   git submodule update
   ./bootstrap.sh
-  ./b2 --with-json --with-log --with-test
+  ./b2 --with-json --with-test
   cd ..
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -53,10 +53,7 @@ buildBoost(){
   else
     mv boost/stage/lib/libboost_unit_test_framework.so ../lib
   fi
-  mv boost/boost/test ../include
-
-  mv boost/stage/lib/libboost_log.a ../lib
-  mv boost/boost/log ../include
+  mv boost/libs/test/include/boost/ ../include
 
 }
 
@@ -71,6 +68,17 @@ buildJson(){
 
   mv jsoncpp/lib/libjsoncpp.a ../lib
   mv jsoncpp/include/json/ ../include
+}
+
+buildSpdlog(){
+  cd spdlog
+  cmake .
+  make
+  cd ..
+
+  mv spdlog/libspdlog.a ../lib/
+  mv spdlog/include/spdlog ../include
+
 }
 
 #TODO we need to make the module versions constant.
@@ -121,6 +129,7 @@ buildGlad &
 buildGlfw &
 buildGlm &
 buildJson &
+buildSpdlog
 
 
 
