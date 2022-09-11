@@ -10,9 +10,11 @@
  * @param loggerName the name used to fetch references to the logger
  */
 
+#include <string>
+
 namespace logging {
 
-    void configure(const char *loggerName);
+    void configure(const std::string& loggerName);
 
 }
 

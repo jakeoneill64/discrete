@@ -16,7 +16,7 @@ namespace Render {
 
     public :
 
-        RenderConfiguration(int glMajorVersion, int glMinorVersion, int glForwardCompatible,
+        RenderConfiguration(int& glMajorVersion, int glMinorVersion, int glForwardCompatible,
                             int windowStartWidth, int windowStartHeight, std::string windowName, int glProfile);
 
         const int glMajorVersion;

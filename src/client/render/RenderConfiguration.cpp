@@ -7,7 +7,7 @@
 #include <utility>
 
 Render::RenderConfiguration::RenderConfiguration(
-        int glMajorVersion,
+        int& glMajorVersion,
         int glMinorVersion,
         int glForwardCompatible,
         int windowStartWidth,

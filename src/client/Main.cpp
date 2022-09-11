@@ -15,6 +15,8 @@ int main(){
 
     logger->info("TEST!!!");
 
+    logger->flush();
+
 //    Render::RenderConfiguration config{3, 3, 1, 800, 600, std::string{"JakeyWakey"}, 0};
 //    Render::RenderClient client{config};
 
