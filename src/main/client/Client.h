@@ -5,4 +5,9 @@
 #ifndef MRONEILLSCUBES_CLIENT_H
 #define MRONEILLSCUBES_CLIENT_H
 
+class Client{
+    void update();
+    void draw();
+};
+
 #endif //MRONEILLSCUBES_CLIENT_H

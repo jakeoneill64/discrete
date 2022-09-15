@@ -14,10 +14,10 @@ endif()
 
 link_libraries(libglad.a libglfw3.a libjsoncpp.a libspdlog.a)
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
 
-add_executable(mroneillscubes src/client/Main.cpp src/server/Server.cpp src/server/Server.h src/server/business/World.h src/server/business/World.cpp src/server/business/Voxel.cpp src/server/business/Voxel.h src/client/render/RenderConfiguration.h src/client/render/RenderClient.h src/client/render/RenderClient.cpp src/client/render/RenderConfiguration.cpp src/client/render/Camera.h src/client/render/Camera.cpp src/client/render/Shader.h src/client/render/Shader.cpp src/Log.h src/Log.cpp src/client/render/Mesh.h src/client/render/Mesh.cpp src/client/Client.h src/client/Client.cpp src/client/input/InputConfiguration.h src/client/input/InputConfiguration.cpp src/client/input/InputManager.h src/client/input/InputManager.cpp src/util/Event.h src/util/Event.cpp src/Configuration.h)
+add_executable(mroneillscubes src/main/client/Main.cpp src/main/server/Server.cpp src/main/server/Server.h src/main/server/business/World.h src/main/server/business/World.cpp src/main/server/business/Voxel.cpp src/main/server/business/Voxel.h src/main/client/render/RenderConfiguration.h src/main/client/render/RenderClient.h src/main/client/render/RenderClient.cpp src/main/client/render/RenderConfiguration.cpp src/main/client/render/Camera.h src/main/client/render/Camera.cpp src/main/client/render/Shader.h src/main/client/render/Shader.cpp src/main/Log.h src/main/Log.cpp src/main/client/Client.h src/main/client/Client.cpp src/main/client/input/InputConfiguration.h src/main/client/input/InputConfiguration.cpp src/main/client/input/InputManager.h src/main/client/input/InputManager.cpp src/main/client/Voxel.h src/main/client/render/Mesh.h src/main/client/render/Vertex.h src/main/client/render/GreenBlock.h src/main/client/render/GreenBlock.cpp src/main/client/render/Mesh.cpp src/main/client/render/Vertex.cpp)
 
 
 

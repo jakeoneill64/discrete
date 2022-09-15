@@ -3,14 +3,19 @@
 //
 
 #include "InputManager.h"
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 #include <functional>
+
+//inputConfiguration -> what should the key do on this input in a given InputContext - enum.
+
+
+
 
 InputManager::InputManager(const InputConfiguration &configuration, GLFWwindow * window)
 : m_configuration{configuration}
 {
     glfwSetKeyCallback(window, [](GLFWwindow* windowx, int key, int scancode, int action, int mods){
-        onKeyboardEvent()
+        //getInputConfiguration
     });
 }
 
