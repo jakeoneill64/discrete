@@ -9,7 +9,9 @@
 #include "Mesh.h"
 
 class GreenBlock: public Voxel{
-    const Mesh* getMesh();
+public:
+    const Mesh& getMesh() override;
+    GreenBlock();
 };
 
 #endif //MRONEILLSCUBES_GREENBLOCK_H

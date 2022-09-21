@@ -3,8 +3,9 @@
 //
 
 #include "Shader.h"
+#include "render.h"
 #include <fstream>
-#include "GLFW/glfw3.h"
+#include <vector>
 
 Shader::Shader(const char *fileName, const uint32_t& shaderType) {
 
@@ -14,16 +15,13 @@ Shader::Shader(const char *fileName, const uint32_t& shaderType) {
 
     const char * codeCString = code.c_str();
 
-    m_shaderId = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(m_shaderId, 1, &codeCString, nullptr);
-    glCompileShader(m_shaderId);
+    glWrap(m_shaderId = glCreateShader(shaderType));
+
+    glWrap(glShaderSource(m_shaderId, 1, &codeCString, nullptr));
+    glWrap(glCompileShader(m_shaderId));
 
 }
 
-Shader::Shader(std::string &fileName, const uint32_t &shaderType) : Shader(fileName.c_str(), shaderType){}
 
-void Shader::enable() const {
-    glUseProgram(m_shaderId);
-}
 
 

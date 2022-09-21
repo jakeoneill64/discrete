@@ -8,9 +8,11 @@
 #include <glm/glm.hpp>
 
 struct Vertex{
-    const glm::vec3 position;
-    explicit Vertex(glm::vec3 position);
+    glm::vec3 position;
+    glm::vec3 normal;
 };
+
+
 
 
 #endif //MRONEILLSCUBES_VERTEX_H

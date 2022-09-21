@@ -7,12 +7,9 @@
 class Camera{
 public:
 
-    glm::mat4 getLookAtMatrix();
-
-private:
-
-    glm::vec3* m_position;
-    glm::vec3* m_targetPosition;
+    glm::mat4 getViewMatrix() const;
+    glm::vec3 m_position;
+    glm::vec3 m_targetPosition;
 
 };
 

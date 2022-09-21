@@ -11,20 +11,20 @@
 
 
 
-InputManager::InputManager(const InputConfiguration &configuration, GLFWwindow * window)
-: m_configuration{configuration}
-{
-    glfwSetKeyCallback(window, [](GLFWwindow* windowx, int key, int scancode, int action, int mods){
-        //getInputConfiguration
-    });
-}
-
-void InputManager::setInputConfiguration(const InputConfiguration &configuration) {
-    m_configuration = configuration;
-}
-
-void InputManager::onKeyboardEvent(const GLFWwindow* window, int key, int scancode, int action, int mods) {
-
-}
+//InputManager::InputManager(const InputConfiguration &configuration, GLFWwindow * window)
+//: m_configuration{configuration}
+//{
+//    glfwSetKeyCallback(window, [](GLFWwindow* windowx, int key, int scancode, int action, int mods){
+//        //getInputConfiguration
+//    });
+//}
+//
+//void InputManager::setInputConfiguration(const InputConfiguration &configuration) {
+//    m_configuration = configuration;
+//}
+//
+//void InputManager::onKeyboardEvent(const GLFWwindow* window, int key, int scancode, int action, int mods) {
+//
+//}
 
 

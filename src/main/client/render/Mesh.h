@@ -6,11 +6,12 @@
 #define MRONEILLSCUBES_MESH_H
 
 #include "Vertex.h"
+#include <vector>
 
 struct Mesh{
 
-    const Vertex* const vertices;
-    explicit Mesh(const Vertex* vertices);
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
 
 };
 
