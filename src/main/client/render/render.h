@@ -11,8 +11,7 @@
 #include <memory>
 #include <vector>
 #include <spdlog/spdlog.h>
-#define DISCRETE_DEBUG
-
+#include "constants.h"
 
 namespace discrete {
 
@@ -26,7 +25,7 @@ namespace discrete {
     static void glLogError(const char* functionName, const char* fileName, int line){
         GLenum errorCode;
         while((errorCode = glGetError()) != GL_NO_ERROR){
-            spdlog::get("logger")->error(
+            spdlog::get(discrete::CLIENT_LOGGER_NAME)->error(
                     std::string{"gl error: "} +
                     std::to_string(errorCode) +
                     "in " + functionName + " (" + fileName + ":" + std::to_string(line) + ")"
@@ -37,30 +36,18 @@ namespace discrete {
 #define glWrap(x) x;
 #endif
 
-    class render {
-    public:
+    GLFWwindow* initialiseGLFW();
 
-        ~render();
-
-        render();
-
-        void addMesh(const Mesh &mesh);
-
-        void draw(Camera camera, GLFWwindow *window);
-
-
-    private:
-
-        //we may use more than one of these in the future.
-        unsigned int VBO;
-        unsigned int VAO;
-        unsigned int EBO;
-
-        unsigned int shaderProgramId;
-        glm::mat4 projection;
-
-        std::vector<const Mesh> m_meshes;
+    struct RenderContext{ // contain all metadata needed to draw
+        unsigned int vbo;
+        unsigned int vao;
+        unsigned int ebo;
+        unsigned int programId;
     };
+
+    RenderContext createGLContext(const char* vertexShaderPath, const char* fragmentShaderPath);
+
+    void draw(const Camera& camera, GLFWwindow *window, const std::vector<Mesh>& meshes, const RenderContext& renderContext);
 
 }
 

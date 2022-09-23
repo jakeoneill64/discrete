@@ -13,8 +13,8 @@ class Client{
 
 public:
 
-    Client();
     int run();
+    Client();
     ~Client();
 
 
@@ -25,7 +25,6 @@ private:
     static bool s_shouldRun;
 
     GLFWwindow* m_window;
-    std::unique_ptr<discrete::render> renderer;
 
 };
 

@@ -12,7 +12,7 @@
 class Voxel{
 public:
 
-    virtual const Mesh& getMesh() = 0;
+    virtual Mesh&& getMesh() = 0;
     glm::mat4 modelTransform;
 
 

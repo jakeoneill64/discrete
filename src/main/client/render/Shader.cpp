@@ -22,6 +22,16 @@ Shader::Shader(const char *fileName, const uint32_t& shaderType) {
 
 }
 
+unsigned int Shader::linkShaders(const Shader& vertexShader, const Shader& fragmentShader) {
+
+    glWrap(unsigned int programId = glCreateProgram());
+    glWrap(glAttachShader(programId, vertexShader.m_shaderId));
+    glWrap(glAttachShader(programId, fragmentShader.m_shaderId));
+    glWrap(glLinkProgram(programId));
+    return programId;
+
+}
+
 
 
 

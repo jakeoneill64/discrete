@@ -3,81 +3,86 @@
 //
 
 #include "glad/glad.h"
-#include "client/Constants.h"
+#include "constants.h"
 #include "render.h"
 #include "Shader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <vector>
 
+void discrete::draw(
+        const Camera& camera,
+        GLFWwindow* window,
+        const std::vector<Mesh>& meshes,
+        const discrete::RenderContext& renderContext
+        ) {
 
+    glWrap(glUniformMatrix4fv(glGetUniformLocation(renderContext.programId, "view"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]));
+    glWrap(glUniformMatrix4fv(glGetUniformLocation(renderContext.programId, "projection"), 1, GL_FALSE, &projection[0][0]));
 
-discrete::render::render()
-:
-projection(glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f))
-{
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-    glBufferData(GL_ARRAY_BUFFER, discrete::GL_BUF_SIZE, nullptr, GL_DYNAMIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) (3*sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(discrete::GL_BUF_SIZE), nullptr, GL_DYNAMIC_DRAW);
-
-    Shader vertexShader{"/User/jake/Dev/discrete/src/resources/shader/vertex-basic.glsl", GL_VERTEX_SHADER};
-    Shader fragmentShader{"/User/jake/Dev/discrete/src/resource/shader/fragment-basic.glsl", GL_FRAGMENT_SHADER};
-
-    shaderProgramId = Shader::linkShaders(vertexShader, fragmentShader);
-
-    glUseProgram(shaderProgramId);
-
-    
 
 }
 
-void discrete::render::draw(Camera camera, GLFWwindow* window) {
+discrete::RenderContext discrete::createGLContext(const char* vertexShaderPath, const char* fragmentShaderPath) {
 
-    glWrap(glUniformMatrix4fv(glGetUniformLocation(shaderProgramId, "view"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]));
-    glWrap(glUniformMatrix4fv(glGetUniformLocation(shaderProgramId, "projection"), 1, GL_FALSE, &projection[0][0]));
+    Shader vertex{vertexShaderPath, GL_VERTEX_SHADER};
+    Shader fragment{fragmentShaderPath, GL_FRAGMENT_SHADER};
+    unsigned int programId{Shader::linkShaders(vertex, fragment)};
+    unsigned int vao, vbo, ibo;
 
+    glWrap(glGenVertexArrays(1, &vao));
+    glWrap(glGenBuffers(1, &vbo));
+    glWrap(glGenBuffers(1, &ibo));
 
-    unsigned int indexPointer{0};
-    unsigned int elementPointer{0};
+    glWrap(glBindVertexArray(vao));
+    glWrap(glBindBuffer(GL_ARRAY_BUFFER, vbo));
 
-    glWrap(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
-    glWrap(glClear(GL_COLOR_BUFFER_BIT));
+    glWrap(glBufferData(GL_ARRAY_BUFFER, discrete::GL_BUF_SIZE, nullptr, GL_DYNAMIC_DRAW));
 
+    // position attribute
+    glWrap(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0));
+    glWrap(glEnableVertexAttribArray(0));
 
-    for(const Mesh& mesh: m_meshes){
-        glWrap(glBufferSubData(GL_ARRAY_BUFFER, indexPointer, (long) (sizeof(Vertex) * mesh.vertices.size()), mesh.vertices.data()));
-        glWrap(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, elementPointer, (long) (sizeof(unsigned int) * mesh.indices.size()), mesh.indices.data()));
-        indexPointer += sizeof(Vertex) * mesh.vertices.size();
-        elementPointer += (sizeof(unsigned int) * mesh.indices.size());
+}
+
+GLFWwindow* discrete::initialiseGLFW() {
+
+    auto logger{spdlog::get(discrete::CLIENT_LOGGER_NAME)};
+
+    if(!glfwInit()){
+        const char* message = "unable to initialise GLFW";
+        logger->error(message);
+        throw std::runtime_error(message);
     }
 
-    glWrap(glBindVertexArray(VAO));
-    glWrap(glDrawElements(GL_TRIANGLES, elementPointer, GL_UNSIGNED_INT, 0));
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, discrete::GL_MAJOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, discrete::GL_MINOR);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwSwapBuffers(window);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
+    GLFWwindow * window = glfwCreateWindow(
+            discrete::WINDOW_START_WIDTH,
+            discrete::WINDOW_START_HEIGHT,
+            discrete::ENGINE_NAME,
+            nullptr,
+            nullptr
+    );
+
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height) {
+        glViewport(0, 0, width, height);
+    });
+
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        const char* message = "unable to load GL function pointers";
+        logger->error(message);
+        throw std::runtime_error(message);
+    }
+
+    return window;
 }
 
-void discrete::render::addMesh(const Mesh& mesh) {
-    m_meshes.push_back(mesh);
-}
 
-discrete::render::~render() {
-    glfwTerminate();
-}

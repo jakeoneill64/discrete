@@ -8,15 +8,16 @@
 namespace discrete{
 
     constexpr const char* ENGINE_NAME = "discrete";
+    constexpr const char* CLIENT_LOGGER_NAME = "discrete-client";
+    constexpr const char* SERVER_LOGGER_NAME = "discrete-server";
 
     //The versions are not hard constraints but signify a bare minimum.
     constexpr unsigned int GL_MAJOR = 3;
     constexpr unsigned int GL_MINOR = 3;
-    constexpr unsigned int GL_PROFILE = GLFW_OPENGL_CORE_PROFILE;
     constexpr unsigned int GL_BUF_SIZE = 1024 * 1024 * 5;
 
-    constexpr int WINDOW_START_WIDTH = 800;
-    constexpr int WINDOW_START_HEIGHT = 600;
+    constexpr unsigned int WINDOW_START_WIDTH = 800;
+    constexpr unsigned int WINDOW_START_HEIGHT = 600;
 
 };
 

@@ -23,6 +23,7 @@ GreenBlock::GreenBlock(){
             glm::vec3 {-0.5f, 0.5f, 0.5f}, glm::vec3 {0.5f, 0.5f, 0.5f}
     };
 
+
     const unsigned int indices[36]{
 
             0, 2, 3,
