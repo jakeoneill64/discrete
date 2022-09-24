@@ -7,10 +7,9 @@
 #include "GreenBlock.h"
 #include <glm/glm.hpp>
 
-const Mesh& GreenBlock::getMesh() {
+Mesh&& GreenBlock::getMesh() {
 
-
-    return m_mesh;
+    return std::move(m_mesh);
 
 }
 

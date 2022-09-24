@@ -6,9 +6,7 @@
 
 int main(){
 
-    Client client{};
-    return client.run();
-
+    return Client::instance.run();
 
 }
 

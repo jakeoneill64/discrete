@@ -14,18 +14,19 @@ class Client{
 public:
 
     int run();
-    Client();
     ~Client();
+    static Client instance;
 
 
 private:
 
     void update();
+    Client() noexcept;
 
     static bool s_shouldRun;
-
     GLFWwindow* m_window;
 
 };
+
 
 #endif //MRONEILLSCUBES_CLIENT_H

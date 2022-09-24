@@ -28,10 +28,12 @@ namespace discrete {
             spdlog::get(discrete::CLIENT_LOGGER_NAME)->error(
                     std::string{"gl error: "} +
                     std::to_string(errorCode) +
-                    "in " + functionName + " (" + fileName + ":" + std::to_string(line) + ")"
+                    " in " + functionName + " (" + fileName + ":" + std::to_string(line) + ")"
             );
         }
     }
+
+
 #else
 #define glWrap(x) x;
 #endif

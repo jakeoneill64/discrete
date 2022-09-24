@@ -20,6 +20,15 @@ Shader::Shader(const char *fileName, const uint32_t& shaderType) {
     glWrap(glShaderSource(m_shaderId, 1, &codeCString, nullptr));
     glWrap(glCompileShader(m_shaderId));
 
+
+    int success;
+    glGetShaderiv(m_shaderId, GL_COMPILE_STATUS, &success);
+    if(!success){
+        char infoLog[1024];
+        glGetShaderInfoLog(m_shaderId, 1024, nullptr, infoLog);
+        spdlog::get(discrete::CLIENT_LOGGER_NAME)->
+            error(std::string{"gl shader compilation error: "} +  infoLog);
+    }
 }
 
 unsigned int Shader::linkShaders(const Shader& vertexShader, const Shader& fragmentShader) {
@@ -27,7 +36,17 @@ unsigned int Shader::linkShaders(const Shader& vertexShader, const Shader& fragm
     glWrap(unsigned int programId = glCreateProgram());
     glWrap(glAttachShader(programId, vertexShader.m_shaderId));
     glWrap(glAttachShader(programId, fragmentShader.m_shaderId));
-    glWrap(glLinkProgram(programId));
+    glLinkProgram(programId);
+
+    int success;
+    glGetProgramiv(programId, GL_COMPILE_STATUS, &success);
+    if(!success){
+        char infoLog[1024];
+        glGetProgramInfoLog(programId, 1024, nullptr, infoLog);
+        spdlog::get(discrete::CLIENT_LOGGER_NAME)->
+                error(std::string{"gl shader linking error: "} +  infoLog);
+    }
+
     return programId;
 
 }

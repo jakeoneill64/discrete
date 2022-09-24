@@ -10,7 +10,7 @@
 
 class GreenBlock: public Voxel{
 public:
-    const Mesh& getMesh() override;
+    Mesh&& getMesh() override;
     GreenBlock();
 };
 
