@@ -38,8 +38,6 @@ namespace discrete {
 #define glWrap(x) x;
 #endif
 
-    GLFWwindow* initialiseGLFW();
-
     struct RenderContext{ // contain all metadata needed to draw
         unsigned int vbo;
         unsigned int vao;

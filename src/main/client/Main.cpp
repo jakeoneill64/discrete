@@ -6,7 +6,7 @@
 
 int main(){
 
-    return Client::instance.run();
+    return discrete::Client::instance.run();
 
 }
 

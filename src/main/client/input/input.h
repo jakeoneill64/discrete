@@ -10,33 +10,29 @@
 
 namespace discrete{
 
-    enum InputContext{WORLD_ENTITY};
-
     class InputManager{
     public:
+        static InputManager* activeInputManager;
         virtual void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) = 0;
-        virtual void onMouseEvent() = 0;
+        virtual void onMouseEvent(GLFWwindow* window, double xpos, double ypos) = 0;
         virtual void onScrollEvent(){};
-        virtual void onActivate(GLFWwindow* window) = 0;
+        virtual void onActivate(GLFWwindow* window){};
+        virtual ~InputManager() = default;
     };
+
 
     class EntityInputManager: public InputManager{
     public:
         void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) override;
-        void onMouseEvent() override;
+        void onMouseEvent(GLFWwindow* window, double xpos, double ypos) override;
         void onActivate(GLFWwindow* window) override;
         EntityInputManager() noexcept;
     private:
         std::unordered_map<unsigned int, void (*)(GLFWwindow* window)> actionByKey;
     };
 
-    void addInputManager(){
-        //TODO implement. if already present in the managerByContext map, destroy first!
-    }
 
-    static std::unordered_map<InputContext, InputManager*> managerByContext{
-            {WORLD_ENTITY, new EntityInputManager{}}
-    };
+    void updateInputManager(GLFWwindow* window, InputManager* inputManager);
 
 
 }

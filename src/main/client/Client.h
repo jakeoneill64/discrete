@@ -10,29 +10,36 @@
 #include "client/render/render.h"
 #include "client/input/input.h"
 
-using namespace discrete;
+namespace discrete{
 
-class Client{
+class Client {
 
 public:
 
     int run();
+
     void stop();
 
     ~Client();
+
+
     static Client instance;
 
 
 private:
 
     void update();
+
     Client() noexcept;
 
-    InputContext inputContext;
     bool m_shouldRun;
-    GLFWwindow* m_window;
+    GLFWwindow *m_window;
 
 };
+
+GLFWwindow *initialiseGLFW();
+
+}
 
 
 #endif //MRONEILLSCUBES_CLIENT_H
