@@ -8,12 +8,17 @@
 #include <memory>
 #include <GLFW/glfw3.h>
 #include "client/render/render.h"
+#include "client/input/input.h"
+
+using namespace discrete;
 
 class Client{
 
 public:
 
     int run();
+    void stop();
+
     ~Client();
     static Client instance;
 
@@ -23,7 +28,8 @@ private:
     void update();
     Client() noexcept;
 
-    static bool s_shouldRun;
+    InputContext inputContext;
+    bool m_shouldRun;
     GLFWwindow* m_window;
 
 };

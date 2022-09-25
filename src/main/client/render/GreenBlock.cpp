@@ -13,13 +13,13 @@ Mesh&& GreenBlock::getMesh() {
 
 }
 
-GreenBlock::GreenBlock(){
+GreenBlock::GreenBlock(glm::vec3 vector){
 
     const Vertex vertices[8]{
-            glm::vec3 {-0.5f, -0.5f, -0.5f}, glm::vec3 {-0.5f, -0.5f, 0.5f},
-            glm::vec3 {0.5f, -0.5f, -0.5f},glm::vec3 {-0.5f, 0.5f, -0.5f},
-            glm::vec3 {0.5f, 0.5f, -0.5f}, glm::vec3 {0.5f, -0.5f, 0.5f},
-            glm::vec3 {-0.5f, 0.5f, 0.5f}, glm::vec3 {0.5f, 0.5f, 0.5f}
+            glm::vec3 {-0.5f, -0.5f, -0.5f} + vector, glm::vec3 {-0.5f, -0.5f, 0.5f} + vector,
+            glm::vec3 {0.5f, -0.5f, -0.5f} + vector,glm::vec3 {-0.5f, 0.5f, -0.5f} + vector,
+            glm::vec3 {0.5f, 0.5f, -0.5f} +vector, glm::vec3 {0.5f, -0.5f, 0.5f}+vector,
+            glm::vec3 {-0.5f, 0.5f, 0.5f} +vector, glm::vec3 {0.5f, 0.5f, 0.5f} + vector
     };
 
 

@@ -11,7 +11,7 @@
 class GreenBlock: public Voxel{
 public:
     Mesh&& getMesh() override;
-    GreenBlock();
+    GreenBlock(glm::vec3);
 };
 
 #endif //MRONEILLSCUBES_GREENBLOCK_H

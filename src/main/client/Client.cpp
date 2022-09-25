@@ -12,7 +12,6 @@
 #include "client/render/GreenBlock.h"
 
 
-bool Client::s_shouldRun = true;
 Client Client::instance;
 
 int Client::run()
@@ -20,18 +19,21 @@ int Client::run()
     //throwaway stuff
     Camera cam{};
     cam.m_targetPosition = glm::vec3{0, 0, 0};
-    cam.m_position = glm::vec3{-1.0f, 0.0f, 0.0f};
+    cam.m_position = glm::vec3{-5.0f, 0.0f, 4.0f};
 
     std::vector<Mesh> meshes;
-    meshes.push_back(GreenBlock{}.getMesh());
+    auto left = GreenBlock{glm::vec3 {0.0f, 0.0f, 0.0f}}.getMesh();
+
+    meshes.push_back(left);
 
     m_window = discrete::initialiseGLFW();
     discrete::RenderContext renderContext = discrete::createGLContext("/Users/jake/Dev/discrete/src/resources/shader/vertex-basic.glsl","/Users/jake/Dev/discrete/src/resources/shader/fragment-basic.glsl");
 
-    while(Client::s_shouldRun){
+
+    while(Client::m_shouldRun){
 
         if(glfwWindowShouldClose(m_window))
-            s_shouldRun = false;
+            m_shouldRun = false;
 
 
         update();
@@ -42,7 +44,10 @@ int Client::run()
     return 0;
 }
 
-Client::Client() noexcept {
+Client::Client() noexcept
+:
+m_shouldRun{true}
+{
     logging::configure(discrete::CLIENT_LOGGER_NAME);
 }
 
@@ -52,9 +57,14 @@ void Client::update() {
 
 }
 
+void Client::stop() {
+    m_shouldRun = false;
+}
+
 Client::~Client() {
 
     glfwDestroyWindow(m_window);
 
 }
+
 
