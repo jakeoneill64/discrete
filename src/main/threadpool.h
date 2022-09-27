@@ -12,8 +12,8 @@
 
 class ThreadPool{
 public:
-    explicit ThreadPool(unsigned int size);
-    ThreadPool();
+    explicit ThreadPool(unsigned int size) noexcept;
+    ThreadPool() noexcept;
     ~ThreadPool();
     void submit(const std::function<void()>& job);
 private:

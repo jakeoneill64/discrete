@@ -5,7 +5,7 @@
 #include "threadpool.h"
 #include <thread>
 
-ThreadPool::ThreadPool(unsigned int size)
+ThreadPool::ThreadPool(unsigned int size) noexcept
 : m_threads{size}, m_shouldRun{true}
 {
     for(int x = 0; x < size; x++){
@@ -13,7 +13,7 @@ ThreadPool::ThreadPool(unsigned int size)
     }
 }
 
-ThreadPool::ThreadPool()
+ThreadPool::ThreadPool() noexcept
 : ThreadPool(std::thread::hardware_concurrency())
 {}
 
