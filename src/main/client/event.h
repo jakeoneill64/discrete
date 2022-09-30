@@ -6,20 +6,24 @@
 #define MRONEILLSCUBES_EVENT_H
 
 #include "threadpool.h"
+#include <unordered_map>
+#include <any>
+
 
 namespace discrete {
 
-    template<typename T>
-    class EventManager {
+    class Event{
     public:
-        void subscribe(std::function<void(T)> callback);
-        void publish(const T&);
-    private:
-        std::vector<std::function<void(T)>> m_subscribers;
-        std::mutex m_mutex;
-        ThreadPool m_threadPool;
-    };
+        template<typename T>
+        static void subscribe(std::function<void(T)> callback);
 
+        template<typename T>
+        static void publish(const T& event);
+    private:
+        static std::unordered_map<std::type_info, std::vector<std::function<void(std::any)>>> s_eventManagersByTypes;
+        static std::mutex s_mutex;
+        static ThreadPool s_threadPool;
+    };
 
 }
 

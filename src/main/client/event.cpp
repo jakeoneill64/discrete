@@ -6,15 +6,17 @@
 
 using namespace discrete;
 
-template <typename T>
-void EventManager<T>::subscribe(std::function<void(T)> callback){
-    std::lock_guard lock{m_mutex};
-    m_subscribers.push_back(callback);
+template<typename T>
+void Event::subscribe(std::function<void(T)> callback) {
+    std::lock_guard lock{s_mutex};
+    s_eventManagersByTypes[typeid(T)].push_back(callback);
 }
 
-template <typename T>
-void EventManager<T>::publish(const T&){
-    std::lock_guard lock{m_mutex};
-    for(const auto& subscriber: m_subscribers)
-        m_threadPool(subscriber());
+template<typename T>
+void Event::publish(const T &event) {
+    std::lock_guard lock{s_mutex};
+    std::vector<std::function<void(T)>> subscribers = std::any_cast<std::vector<std::function<void(T)>>>(s_eventManagersByTypes[typeid(T)]);
+    for(const auto& subscriber: subscribers){
+        s_threadPool.submit([subscriber]{subscriber();});
+    }
 }

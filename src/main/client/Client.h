@@ -8,25 +8,38 @@
 #include <memory>
 #include <GLFW/glfw3.h>
 #include "client/render/render.h"
+#include "client/input/input.h"
 
-class Client{
+namespace discrete{
+
+class Client {
 
 public:
 
     int run();
+
+    void stop();
+
     ~Client();
+
+
     static Client instance;
 
 
 private:
 
     void update();
+
     Client() noexcept;
 
-    static bool s_shouldRun;
-    GLFWwindow* m_window;
+    bool m_shouldRun;
+    GLFWwindow *m_window;
 
 };
+
+GLFWwindow *initialiseGLFW();
+
+}
 
 
 #endif //MRONEILLSCUBES_CLIENT_H

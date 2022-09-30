@@ -2,7 +2,7 @@
 // Created by Jake M O'Neill on 10/09/2022.
 //
 
-#include "Log.h"
+#include "log.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"

@@ -18,7 +18,7 @@ link_libraries(libglad.a libglfw3.a libjsoncpp.a libspdlog.a)
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
 
-add_executable(mroneillscubes src/main/client/Main.cpp src/main/client/render/render.h src/main/client/render/render.cpp src/main/client/render/Camera.h src/main/client/render/Camera.cpp src/main/client/render/Shader.h src/main/client/render/Shader.cpp src/main/Log.h src/main/Log.cpp src/main/client/Client.h src/main/client/Client.cpp src/main/client/input/InputConfiguration.h src/main/client/input/InputConfiguration.cpp src/main/client/input/InputManager.h src/main/client/input/InputManager.cpp src/main/client/Voxel.h src/main/client/render/Mesh.h src/main/client/render/Vertex.h src/main/client/render/GreenBlock.h src/main/client/render/GreenBlock.cpp src/main/constants.h src/main/client/Entity.cpp src/main/client/test.cpp src/main/threadpool.h src/main/threadpool.cpp src/main/client/event.cpp src/main/client/event.h)
+add_executable(mroneillscubes src/main/client/Main.cpp src/main/client/render/render.h src/main/client/render/render.cpp src/main/client/render/Camera.h src/main/client/render/Camera.cpp src/main/client/render/Shader.h src/main/client/render/Shader.cpp src/main/log.h src/main/log.cpp src/main/client/Client.h src/main/client/Client.cpp src/main/client/input/input.h src/main/client/input/input.cpp src/main/client/Voxel.h src/main/client/render/Mesh.h src/main/client/render/Vertex.h src/main/client/render/GreenBlock.h src/main/client/render/GreenBlock.cpp src/main/constants.h src/main/client/Entity.cpp src/main/threadpool.h src/main/threadpool.cpp src/main/client/event.cpp src/main/client/event.h src/main/world.h src/main/world.cpp src/main/game.h src/main/game.cpp)
 
 
 
