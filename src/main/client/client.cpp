@@ -2,47 +2,28 @@
 // Created by Jake M O'Neill on 11/09/2022.
 //
 
-
 #include "glad/glad.h"
 #include <glm/glm.hpp>
-#include "Client.h"
-#include "log.h"
-#include "constants.h"
-#include "Voxel.h"
-#include "client/render/GreenBlock.h"
-#include "client/input/input.h"
+
 
 using namespace discrete;
 
 
-Client Client::instance;
-
 int Client::run()
 {
 
-
-    //throwaway stuff
-    Camera cam{};
-    cam.m_targetPosition = glm::vec3{0, 0, 0};
-    cam.m_position = glm::vec3{-5.0f, 0.0f, 4.0f};
-
-    std::vector<Mesh> meshes;
-    auto left = GreenBlock{glm::vec3 {0.0f, 0.0f, 0.0f}}.getMesh();
-
-    meshes.push_back(left);
-
     m_window = discrete::initialiseGLFW();
-    discrete::RenderContext renderContext = discrete::createGLContext("/Users/jake/Dev/discrete/src/resources/shader/vertex-basic.glsl","/Users/jake/Dev/discrete/src/resources/shader/fragment-basic.glsl");
-
+    RenderContext renderContext = createGLContext("/Users/jake/Dev/discrete/src/resources/shader/vertex-basic.glsl","/Users/jake/Dev/discrete/src/resources/shader/fragment-basic.glsl");
 
     while(Client::m_shouldRun){
 
         if(glfwWindowShouldClose(m_window))
             m_shouldRun = false;
 
+        glfwPollEvents();
 
-        update();
-        discrete::draw(cam, m_window, meshes, renderContext);
+        m_game->update();
+        m_game->draw(m_window, m);
 
     }
 
@@ -51,15 +32,9 @@ int Client::run()
 
 Client::Client() noexcept
 :
-m_shouldRun{true}
+m_shouldRun{true}, m_game{new Game{}}
 {
     logging::configure(discrete::CLIENT_LOGGER_NAME);
-}
-
-void Client::update() {
-
-    glfwPollEvents();
-
 }
 
 

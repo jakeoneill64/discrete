@@ -8,12 +8,22 @@
 #include "Vertex.h"
 #include <vector>
 
-struct Mesh{
+namespace discrete {
 
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    struct Mesh {
 
-};
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+
+    };
+
+    const Mesh& cube_mesh();
+
+}
+
+
+
+
 
 
 #endif //MRONEILLSCUBES_MESH_H

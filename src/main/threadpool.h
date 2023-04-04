@@ -12,17 +12,27 @@
 
 class ThreadPool{
 public:
+
     explicit ThreadPool(unsigned int size) noexcept;
     ThreadPool() noexcept;
-    ~ThreadPool();
+    ~ThreadPool() noexcept;
     void submit(const std::function<void()>& job);
+
 private:
+
     void loop();
     bool m_shouldRun;
     std::queue<std::function<void()>> m_jobs;
     std::mutex m_mutex;
     std::vector<std::thread> m_threads;
     std::condition_variable m_conditionVariable;
+
 };
+
+const ThreadPool& shared_threadpool(){
+    static ThreadPool shared_pool{};
+    return shared_pool;
+}
+
 
 #endif //MRONEILLSCUBES_THREADPOOL_H

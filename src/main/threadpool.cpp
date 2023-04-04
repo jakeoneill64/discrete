@@ -17,7 +17,8 @@ ThreadPool::ThreadPool() noexcept
 : ThreadPool(std::thread::hardware_concurrency())
 {}
 
-ThreadPool::~ThreadPool() {
+ThreadPool::~ThreadPool() noexcept
+{
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_shouldRun = false;
@@ -29,7 +30,8 @@ ThreadPool::~ThreadPool() {
     m_threads.clear();
 }
 
-void ThreadPool::submit(const std::function<void()>& job) {
+void ThreadPool::submit(const std::function<void()>& job)
+{
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_jobs.push(job);

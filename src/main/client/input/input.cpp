@@ -3,8 +3,8 @@
 //
 
 #include "input.h"
-#include <spdlog/spdlog.h>
-#include "constants.h"
+#include "entity.h"
+#include "event.h"
 
 using namespace discrete;
 
@@ -20,11 +20,10 @@ void EntityInputManager::onActivate(GLFWwindow* window) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-InputManager* InputManager::activeInputManager{nullptr};
 
 EntityInputManager::EntityInputManager() noexcept:
 actionByKey{
-    {GLFW_KEY_W, [](GLFWwindow* window){}},
+    {GLFW_KEY_W, [](GLFWwindow* window){event::publish(EntityMovement{});}},
     {GLFW_KEY_A, [](GLFWwindow* window){}},
     {GLFW_KEY_S, [](GLFWwindow* window){}},
     {GLFW_KEY_D, [](GLFWwindow* window){}},

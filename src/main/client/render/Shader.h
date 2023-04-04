@@ -9,6 +9,7 @@
 #include "glad/glad.h"
 #include "render.h"
 
+//TODO this shouldn't be a class
 class Shader{
 public:
     Shader(const char* fileName, const uint32_t& shaderType);

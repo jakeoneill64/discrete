@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(mroneillscubes)
+project(discrete)
 
 set(CMAKE_CXX_STANDARD 23)
 link_directories(lib)
@@ -17,8 +17,9 @@ link_libraries(libglad.a libglfw3.a libjsoncpp.a libspdlog.a)
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
+file(GLOB_RECURSE SOURCES "src/main/*")
 
-add_executable(mroneillscubes src/main/client/Main.cpp src/main/client/render/render.h src/main/client/render/render.cpp src/main/client/render/Camera.h src/main/client/render/Camera.cpp src/main/client/render/Shader.h src/main/client/render/Shader.cpp src/main/log.h src/main/log.cpp src/main/client/Client.h src/main/client/Client.cpp src/main/client/input/input.h src/main/client/input/input.cpp src/main/client/Voxel.h src/main/client/render/Mesh.h src/main/client/render/Vertex.h src/main/client/render/GreenBlock.h src/main/client/render/GreenBlock.cpp src/main/constants.h src/main/client/Entity.cpp src/main/threadpool.h src/main/threadpool.cpp src/main/client/event.cpp src/main/client/event.h src/main/world.h src/main/world.cpp src/main/game.h src/main/game.cpp)
+add_executable(mroneillscubes ${SOURCES} src/main/server/server.h)
 
 
 

@@ -10,17 +10,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-void discrete::draw(
-        const Camera& camera,
-        GLFWwindow* window,
-        const std::vector<Mesh>& meshes,
-        const discrete::RenderContext& renderContext
-        ) {
+void Renderer::draw(glm::mat4 view, const std::vector<mesh> &meshes) {
 
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)discrete::WINDOW_START_WIDTH / (float)discrete::WINDOW_START_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(
+                                glm::radians(45.0f),
+                                (float)discrete::WINDOW_START_WIDTH / (float)discrete::WINDOW_START_HEIGHT,
+                                0.1f,100.0f
+                                );
 
-    glWrap(glUniformMatrix4fv(glGetUniformLocation(renderContext.programId, "view"), 1, GL_FALSE, &camera.getViewMatrix()[0][0]));
-    glWrap(glUniformMatrix4fv(glGetUniformLocation(renderContext.programId, "projection"), 1, GL_FALSE, &projection[0][0]));
+    glWrap(glUniformMatrix4fv(glGetUniformLocation(m_renderContext.programId, "view"), 1, GL_FALSE, &view[0][0]));
+    glWrap(glUniformMatrix4fv(glGetUniformLocation(m_renderContext.programId, "projection"), 1, GL_FALSE, &projection[0][0]));
 
     glWrap(void *vertexBuffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
     glWrap(void *indexBuffer = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY));
@@ -28,7 +27,7 @@ void discrete::draw(
     unsigned long indexPointerOffset{0};
     unsigned long vertexPointerOffset{0};
 
-    for(const Mesh& mesh: meshes){
+    for(const mesh& mesh: meshes){
         memcpy(vertexBuffer, mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex));
         memcpy(indexBuffer, mesh.indices.data(), mesh.indices.size() * sizeof(unsigned int));
         vertexPointerOffset += sizeof(Vertex) * mesh.vertices.size();
@@ -40,12 +39,11 @@ void discrete::draw(
 
     glWrap(glDrawElements(GL_TRIANGLES, indexPointerOffset / sizeof(unsigned int), GL_UNSIGNED_INT, 0));
 
-    glfwSwapBuffers(window);
-
+    glfwSwapBuffers(m_window.get());
 
 }
 
-discrete::RenderContext discrete::createGLContext(const char* vertexShaderPath, const char* fragmentShaderPath) {
+RenderContext createGLContext(const char* vertexShaderPath, const char* fragmentShaderPath) {
 
     Shader vertex{vertexShaderPath, GL_VERTEX_SHADER};
     Shader fragment{fragmentShaderPath, GL_FRAGMENT_SHADER};
@@ -70,13 +68,15 @@ discrete::RenderContext discrete::createGLContext(const char* vertexShaderPath, 
     glWrap(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0));
     glWrap(glEnableVertexAttribArray(0));
 
-    RenderContext context;
+    RenderContext context{vbo, vao, ebo, programId};
 
-    context.vbo = vbo;
-    context.vao = vao;
-    context.ebo = ebo;
-    context.programId = programId;
+//    context.vbo = vbo;
+//    context.vao = vao;
+//    context.ebo = ebo;
+//    context.programId = programId;
     return context;
 }
+
+
 
 

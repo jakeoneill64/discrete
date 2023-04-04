@@ -12,6 +12,7 @@ namespace discrete{
 
     class InputManager{
     public:
+        //TODO use smart pointers
         static InputManager* activeInputManager;
         virtual void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) = 0;
         virtual void onMouseEvent(GLFWwindow* window, double xpos, double ypos) = 0;
