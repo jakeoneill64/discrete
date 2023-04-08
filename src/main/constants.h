@@ -12,10 +12,9 @@
 namespace discrete{
 
     constexpr const char* ENGINE_NAME = "discrete";
-    constexpr const char* CLIENT_LOGGER_NAME = "discrete-client";
-    constexpr const char* SERVER_LOGGER_NAME = "discrete-server";
+    constexpr const char* CLIENT_LOGGER_NAME = "client";
+    constexpr const char* SERVER_LOGGER_NAME = "server";
 
-    //The versions are not hard constraints but signify a bare minimum.
     constexpr unsigned int GL_MAJOR = 3;
     constexpr unsigned int GL_MINOR = 3;
     constexpr unsigned int GL_INDEX_BUFFER_SIZE = sizeof(Vertex) * 5 * 1024;

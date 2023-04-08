@@ -9,13 +9,34 @@
 #include <vector>
 #include <memory>
 
+void log(Logger logger, const std::string &message, spdlog::level::level_enum log_level){
 
-void logging::configure(const std::string& loggerName){
-    spdlog::flush_every(std::chrono::seconds(3));
-    std::vector<spdlog::sink_ptr> sinks;
-    sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt> (loggerName + ".log", 1024*1024*5, 5, false));
-    sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-    auto combined_logger = std::make_shared<spdlog::logger>(loggerName, begin(sinks), end(sinks));
-    spdlog::register_logger(combined_logger);
+    static std::array
+            <
+            std::string,
+            static_cast<size_t>(Logger::LOGGER_COUNT)
+            >
+            logger_names{"server", "client"};
+
+    if(logger == Logger::LOGGER_COUNT) return;
+
+    std::string logger_name{logger_names[static_cast<int>(logger)]};
+    auto spd_logger = spdlog::get(logger_name);
+
+    if(!spd_logger){
+
+        static std::vector<spdlog::sink_ptr> sinks{
+#ifdef DISCRETE_DEBUG
+            std::make_shared<spdlog::sinks::rotating_file_sink_mt> ("discrete.log", 1024*1024*1024, 5, false),
+#endif
+            std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
+        };
+
+        spd_logger = std::make_shared<spdlog::logger>(logger_name, begin(sinks), end(sinks));
+        spdlog::register_logger(spd_logger);
+    }
+
+    spd_logger->log(log_level, message);
+
 }
 

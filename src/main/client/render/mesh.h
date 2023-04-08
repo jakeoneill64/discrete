@@ -8,7 +8,7 @@
 #include "Vertex.h"
 #include <vector>
 
-namespace discrete {
+namespace render {
 
     struct Mesh {
 

@@ -5,17 +5,16 @@
 #ifndef MRONEILLSCUBES_LOG_H
 #define MRONEILLSCUBES_LOG_H
 
-/*! configure the spd context to use both rotating log files and the stdout
- *
- * @param loggerName the name used to fetch references to the logger
- */
-
 #include <string>
+#include "spdlog/spdlog.h"
 
-namespace logging {
+enum class Logger{
+    SERVER,
+    CLIENT,
+    LOGGER_COUNT
+};
 
-    void configure(const std::string& loggerName);
-
-}
+void log(Logger logger, const std::string &message, spdlog::level::level_enum);
+void log(Logger logger, const std::string &message);
 
 #endif //MRONEILLSCUBES_LOG_H
