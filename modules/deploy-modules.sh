@@ -79,12 +79,20 @@ buildSpdlog(){
 
 }
 
+<<<<<<< Updated upstream
 #TODO we need to make the module versions constant.
 
 CURRENT_DIR="$(cd "$(dirname -- "$0")" >/dev/null; pwd -P)"
+||||||| Stash base
+#TODO we need to make the module versions constant.
+
+CURRENT_DIR="$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)"
+=======
+CURRENT_DIR="$(cd "$(dirname  "$0")" >/dev/null; pwd -P)"
+>>>>>>> Stashed changes
 
 if [[ $(pwd) != $CURRENT_DIR ]]; then
-  echo you must be in the modules directory to run this script.
+  echo 'you must be in the modules directory to run this script.'
   exit 1
 fi
 
@@ -107,9 +115,6 @@ fi
 rm -fr ../../lib/* ../../include/*
 
 
-
-
-
 #         (
 #    (     )
 #    )    (
@@ -122,12 +127,28 @@ rm -fr ../../lib/* ../../include/*
 #  _/___\_
 # [_______]
 
+<<<<<<< Updated upstream
 buildBoost
 buildGlad
 buildGlfw
 buildGlm
 buildJson
 buildSpdlog
+||||||| Stash base
+buildBoost &
+buildGlad &
+buildGlfw &
+buildGlm &
+buildJson &
+buildSpdlog
+=======
+buildBoost
+#buildGlad
+#buildGlfw
+#buildGlm
+#buildJson
+#buildSpdlog
+>>>>>>> Stashed changes
 
 
 

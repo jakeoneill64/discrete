@@ -7,8 +7,15 @@
 
 #include "Vertex.h"
 #include <vector>
+#include <glm/glm.hpp>
+
 
 namespace render {
+
+    struct Vertex{
+        glm::vec3 position;
+        glm::vec3 normal;
+    };
 
     struct Mesh {
 

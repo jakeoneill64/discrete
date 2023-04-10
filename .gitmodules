@@ -1,27 +1,33 @@
 [submodule "modules/jsoncpp"]
 	path = modules/jsoncpp
 	url = git@github.com:open-source-parsers/jsoncpp.git
+	ignore = dirty
 
 [submodule "modules/glfw"]
 	path = modules/glfw
 	url = git@github.com:glfw/glfw.git
 	branch = 3.3-stable
+	ignore = dirty
 
-[submodule "modules/glad"]
+[submodule "modules/glad"]git
 	path = modules/glad
 	url = git@github.com:Dav1dde/glad.git
 	branch = glad2
+	ignore = dirty
 
 [submodule "modules/glm"]
 	path = modules/glm
 	url = git@github.com:g-truc/glm.git
+	ignore = dirty
 
 [submodule "modules/boost"]
 	path = modules/boost
 	url = https://github.com/boostorg/boost.git
 	branch = master
+	ignore = dirty
 
 [submodule "modules/spdlog"]
 	path = modules/spdlog
 	url = git@github.com:gabime/spdlog.git
 	branch = v1.x
+    ignore = dirty
