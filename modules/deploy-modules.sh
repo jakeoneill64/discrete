@@ -45,15 +45,13 @@ buildBoost(){
   git submodule init
   git submodule update
   ./bootstrap.sh
-  ./b2 --with-json --with-test
-  cd ..
+  ./b2
 
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    mv boost/stage/lib/libboost_unit_test_framework.dylib ../lib
-  else
-    mv boost/stage/lib/libboost_unit_test_framework.so ../lib
-  fi
-  mv boost/libs/test/include/boost/ ../include
+  [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
+
+  mv boost ../../include
+
+  cd ..
 
 }
 
@@ -83,7 +81,7 @@ buildSpdlog(){
 
 #TODO we need to make the module versions constant.
 
-CURRENT_DIR="$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)"
+CURRENT_DIR="$(cd "$(dirname -- "$0")" >/dev/null; pwd -P)"
 
 if [[ $(pwd) != $CURRENT_DIR ]]; then
   echo you must be in the modules directory to run this script.
@@ -106,7 +104,7 @@ if [[ $(uname) == "Darwin" ]]; then
 fi
 
 #clean install
-rm -fr ../lib/* ../include/*
+rm -fr ../../lib/* ../../include/*
 
 
 
@@ -124,11 +122,11 @@ rm -fr ../lib/* ../include/*
 #  _/___\_
 # [_______]
 
-buildBoost &
-buildGlad &
-buildGlfw &
-buildGlm &
-buildJson &
+buildBoost
+buildGlad
+buildGlfw
+buildGlm
+buildJson
 buildSpdlog
 
 
