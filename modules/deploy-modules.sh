@@ -55,19 +55,6 @@ buildBoost(){
 
 }
 
-buildJson(){
-
-  $sed -i"" "81,82d" jsoncpp/CMakeLists.txt #remove the lines which prevent us from building in place.
-
-  cd jsoncpp
-  cmake .
-  make
-  cd ..
-
-  mv jsoncpp/lib/libjsoncpp.a ../lib
-  mv jsoncpp/include/json/ ../include
-}
-
 buildSpdlog(){
   cd spdlog
   cmake .
@@ -79,19 +66,11 @@ buildSpdlog(){
 
 }
 
-<<<<<<< Updated upstream
 #TODO we need to make the module versions constant.
 
-CURRENT_DIR="$(cd "$(dirname -- "$0")" >/dev/null; pwd -P)"
-||||||| Stash base
-#TODO we need to make the module versions constant.
-
-CURRENT_DIR="$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)"
-=======
 CURRENT_DIR="$(cd "$(dirname  "$0")" >/dev/null; pwd -P)"
->>>>>>> Stashed changes
 
-if [[ $(pwd) != $CURRENT_DIR ]]; then
+if [[ $(pwd) != "$CURRENT_DIR" ]]; then
   echo 'you must be in the modules directory to run this script.'
   exit 1
 fi
@@ -108,7 +87,7 @@ git submodule update
 sed=sed
 
 if [[ $(uname) == "Darwin" ]]; then
-   sed=gsed #lets not bother with bsd sed
+   sed=gsed #then lets not bother with bsd sed
 fi
 
 #clean install
@@ -127,28 +106,13 @@ rm -fr ../../lib/* ../../include/*
 #  _/___\_
 # [_______]
 
-<<<<<<< Updated upstream
-buildBoost
-buildGlad
-buildGlfw
-buildGlm
-buildJson
-buildSpdlog
-||||||| Stash base
-buildBoost &
-buildGlad &
-buildGlfw &
-buildGlm &
-buildJson &
-buildSpdlog
-=======
-buildBoost
-#buildGlad
-#buildGlfw
-#buildGlm
-#buildJson
+#buildBoost &
+#buildGlad &
+#buildGlfw &
+#buildGlm &
+#buildJson &
 #buildSpdlog
->>>>>>> Stashed changes
+
 
 
 
