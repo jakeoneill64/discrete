@@ -84,14 +84,8 @@ done
 git submodule init
 git submodule update
 
-sed=sed
-
-if [[ $(uname) == "Darwin" ]]; then
-   sed=gsed #then lets not bother with bsd sed
-fi
-
-#clean install
-rm -fr ../../lib/* ../../include/*
+# clean install
+rm -r ../lib/* ../include/*
 
 
 #         (
@@ -106,12 +100,13 @@ rm -fr ../../lib/* ../../include/*
 #  _/___\_
 # [_______]
 
-#buildBoost &
-#buildGlad &
-#buildGlfw &
-#buildGlm &
-#buildJson &
-#buildSpdlog
+buildGlad
+buildGlfw
+buildGlm
+buildJson
+buildSpdlog
+buildBoost
+
 
 
 
