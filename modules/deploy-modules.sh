@@ -81,11 +81,10 @@ do
   rm -rf $d
 done
 
-git submodule init
-git submodule update
+git submodule update --remote --init
 
 # clean install
-rm -r ../lib/* ../include/*
+rm -rf ../lib/* ../include/*
 
 
 #         (
