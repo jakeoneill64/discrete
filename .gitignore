@@ -3,6 +3,7 @@ include/
 .idea
 CMakeFiles
 cmake-build-debug
+cmake_install.cmake
 Makefile
 CMakeCache.txt
 .DS_Store

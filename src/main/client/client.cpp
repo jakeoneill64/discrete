@@ -2,8 +2,8 @@
 // Created by Jake M O'Neill on 11/09/2022.
 //
 
-#include "glad/glad.h"
-#include <glm/glm.hpp>
+#include "glad.h"
+#include "glm/glm.hpp"
 
 
 using namespace discrete;

@@ -5,15 +5,18 @@ buildGlm(){
   cd glm
   cmake .
   make
+  mkdir  ../../include/glm
+  mv glm/libglm_static.a ../../lib
+  mv glm/*.hpp ../../include/glm
+  mv glm/gtc ../../include/glm
+  mv glm/detail ../../include/glm
+  mv glm/ext ../../include/glm
+  mv glm/gtx ../../include/glm
+  mv glm/simd ../../include/glm
+  git clean -df
+  git reset head --hard
   cd ..
-  mkdir  ../include/glm
-  mv glm/glm/libglm_static.a ../lib
-  mv glm/glm/*.hpp ../include/glm
-  mv glm/glm/gtc ../include/glm
-  mv glm/glm/detail ../include/glm
-  mv glm/glm/ext ../include/glm
-  mv glm/glm/gtx ../include/glm
-  mv glm/glm/simd ../include/glm
+
 
 }
 
@@ -22,11 +25,13 @@ buildGlad(){
   cd glad
   cmake .
   make
-  cd ..
 
-  mv glad/libglad.a ../lib
-  mv glad/include/glad/ ../include/
-  mv glad/include/KHR ../include/
+  mv libglad.a ../../lib
+  mv include/glad/ ../../include/
+  mv include/KHR ../../include/
+  git clean -df
+  git reset head --hard
+  cd ..
 
 }
 
@@ -34,22 +39,26 @@ buildGlfw(){
   cd glfw
   cmake .
   make
+  mv src/libglfw3.a ../../lib
+  mv include/GLFW/ ../../include
+  git clean -df
+  git reset head --hard
   cd ..
-  mv glfw/src/libglfw3.a ../lib
-  mv glfw/include/GLFW/ ../include
+
 }
 
 buildBoost(){
 
   cd boost/
-  git submodule init
-  git submodule update
+  git submodule update --init
   ./bootstrap.sh
   ./b2
 
   [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
 
   mv boost ../../include
+  git clean -df
+  git reset head --hard
 
   cd ..
 
@@ -59,14 +68,14 @@ buildSpdlog(){
   cd spdlog
   cmake .
   make
+
+  mv libspdlog.a ../../lib/
+  mv include/spdlog ../../include
+  git clean -df
+  git reset head --hard
   cd ..
 
-  mv spdlog/libspdlog.a ../lib/
-  mv spdlog/include/spdlog ../include
-
 }
-
-#TODO we need to make the module versions constant.
 
 CURRENT_DIR="$(cd "$(dirname  "$0")" >/dev/null; pwd -P)"
 
@@ -81,10 +90,11 @@ do
   rm -rf $d
 done
 
-git submodule update --remote --init
+git submodule update --init
 
 # clean install
-rm -rf ../lib/* ../include/*
+rm -rf ../lib ../include
+mkdir ../lib ../include
 
 
 #         (
@@ -102,7 +112,6 @@ rm -rf ../lib/* ../include/*
 buildGlad
 buildGlfw
 buildGlm
-buildJson
 buildSpdlog
 buildBoost
 
