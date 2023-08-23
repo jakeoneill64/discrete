@@ -56,7 +56,15 @@ buildBoost(){
 
   [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
 
-  mv boost ../../include
+  mkdir ../../include/boost
+
+  cd boost/
+  for file in *
+  do
+    [[ -L "$file" ]] && cp -RL "$file" ../../../include/boost/ || cp -R "$file" ../../../include/boost
+  done
+  cd ../
+
   git clean -df
   git reset head --hard
 
