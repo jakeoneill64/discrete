@@ -33,7 +33,7 @@ namespace discrete{
     };
 
 
-    void updateInputManager(GLFWwindow* window, InputManager* inputManager);
+//    void updateInputManager(GLFWwindow* window, InputManager* inputManager);
 
 
 }

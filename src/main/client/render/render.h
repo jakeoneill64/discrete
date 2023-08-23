@@ -6,7 +6,7 @@
 
 namespace render {
 
-    void draw(glm::mat4 view, const std::vector<discrete::Mesh> &meshes, unsigned int shader_program_id);
+//    void draw(glm::mat4 view, const std::vector<discrete::Mesh> &meshes, unsigned int shader_program_id);
     unsigned int create_shader_program(const std::unordered_map<unsigned int, const char*> &shadersByType);
 
 }

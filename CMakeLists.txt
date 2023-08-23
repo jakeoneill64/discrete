@@ -13,7 +13,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_libraries(libboost_unit_test_framework.dylib ${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
 endif()
 
-link_libraries(libglad.a libglfw3.a libjsoncpp.a libspdlog.a)
+link_libraries(libglad.a libglfw3.a libspdlog.a)
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
@@ -32,7 +32,7 @@ foreach(TEST_FILE ${TEST})
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
 
-add_executable(mroneillscubes ${SOURCE})
+add_executable(discrete ${SOURCE})
 
 
 

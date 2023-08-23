@@ -7,7 +7,6 @@
 
 #include <string>
 #include "GLFW/glfw3.h"
-#include "client/render/Vertex.h"
 
 namespace discrete{
 
@@ -17,7 +16,6 @@ namespace discrete{
 
     constexpr unsigned int GL_MAJOR = 3;
     constexpr unsigned int GL_MINOR = 3;
-    constexpr unsigned int GL_INDEX_BUFFER_SIZE = sizeof(Vertex) * 5 * 1024;
     constexpr unsigned int GL_ELEMENT_BUFFER_SIZE = sizeof(unsigned int) * 5 * 1536; //ie 3/2 * element buffer indices per vertex
 
     constexpr unsigned int WINDOW_START_WIDTH = 800;

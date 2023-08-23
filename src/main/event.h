@@ -6,16 +6,19 @@
 #define DISCRETE_EVENT_H
 
 #include <functional>
+#include <string>
+#include <memory>
 
 namespace event{
 
-    template<typename T>
-    static void subscribe(const std::type_info& type_info, std::function<void(T)> callback);
+    void subscribe(const char *, std::function<void()> callback);
+    void subscribe(const std::string&, std::function<void()> callback);
 
-    template<typename T>
-    void publish(const T& event);
+    // TODO for the data, we probably want std::shared_ptr of some type
+    void publish(const char * event);
+    void publish(const std::string &event);
 
 }
 
 
-#endif DISCRETE_EVENT_H
+#endif //DISCRETE_EVENT_H

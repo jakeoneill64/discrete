@@ -5,7 +5,6 @@
 #ifndef MRONEILLSCUBES_MESH_H
 #define MRONEILLSCUBES_MESH_H
 
-#include "Vertex.h"
 #include <vector>
 #include <glm/glm.hpp>
 

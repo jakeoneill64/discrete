@@ -3,7 +3,6 @@
 //
 
 #include "input.h"
-#include "entity.h"
 #include "event.h"
 
 using namespace discrete;
@@ -23,7 +22,7 @@ void EntityInputManager::onActivate(GLFWwindow* window) {
 
 EntityInputManager::EntityInputManager() noexcept:
 actionByKey{
-    {GLFW_KEY_W, [](GLFWwindow* window){event::publish(EntityMovement{});}},
+    {GLFW_KEY_W, [](GLFWwindow* window){}},
     {GLFW_KEY_A, [](GLFWwindow* window){}},
     {GLFW_KEY_S, [](GLFWwindow* window){}},
     {GLFW_KEY_D, [](GLFWwindow* window){}},
@@ -35,9 +34,9 @@ actionByKey{
 }
 {}
 
-void discrete::updateInputManager(GLFWwindow* window, InputManager* inputManager){
-    delete InputManager::activeInputManager;
-    InputManager::activeInputManager = inputManager;
-    inputManager->onActivate(window);
-}
+//void discrete::updateInputManager(GLFWwindow* window, InputManager* inputManager){
+//    delete InputManager::activeInputManager;
+//    InputManager::activeInputManager = inputManager;
+//    inputManager->onActivate(window);
+//}
 

@@ -9,7 +9,7 @@
 
 namespace server{
     std::atomic<bool> should_run;
-    int run();
+    int run(){}
 }
 
 #endif //MRONEILLSCUBES_SERVER_H

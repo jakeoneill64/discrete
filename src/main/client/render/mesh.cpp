@@ -8,7 +8,7 @@
  *
  * @return unit cube mesh
  */
-const discrete::Mesh& discrete::cube_mesh() {
+const render::Mesh& render::cube_mesh() {
     static Mesh unit_cube{
             {
                     {{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}},
