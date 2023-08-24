@@ -19,70 +19,72 @@ public:
     using UInt = typename std::conditional<(size == 8), std::uint8_t,
             typename std::conditional<(size == 16), std::uint16_t,
                     typename std::conditional<(size == 32), std::uint32_t,
-                            typename std::conditional<(size == 64), std::uint64_t,
+                            typename std::conditional<(size == 64), std::uint64_t, //TODO if the last case is not true, we need to create a malformed type
                                     void>::type>::type>::type>::type;
 
     template <typename T>
-    fixed(const T& number, typename std::enable_if_t<std::is_floating_point_v<T> >){
+    // NOLINTNEXTLINE
+    fixed(const T& number, typename std::enable_if_t<std::is_floating_point_v<T>, int > = 0){
         data = number * scaling_factor_inverse;
     }
 
     template <typename T>
-    fixed(const T& number, typename std::enable_if_t<std::is_integral_v<T> >){
+    // NOLINTNEXTLINE
+    fixed(const T& number, typename std::enable_if_t<std::is_integral_v<T>, int> = 0){
         data = number << logBase2(scaling_factor_inverse);
     }
 
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator+(Number operand){
-        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-        return this + fixedOperand;
-    }
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator-(Number operand){
-        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-        return this - fixedOperand;
-    }
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator*(Number operand){
-        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-        return this * fixedOperand;
-    }
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator/(Number operand){
-        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-        return this / fixedOperand;
-    }
-
-    template<>
-    fixed<size, scaling_factor_inverse> operator+(const fixed<size, scaling_factor_inverse>& operand){
-        fixed<size, scaling_factor_inverse> result{};
-        result.data = this->data + operand.data;
-        return result;
-    }
-
-    template<>
-    fixed<size, scaling_factor_inverse> operator-(const fixed<size, scaling_factor_inverse>& operand){
-        fixed<size, scaling_factor_inverse> result{};
-        result.data = this->data - operand.data;
-        return result;
-    }
-
-    template<>
-    fixed<size, scaling_factor_inverse> operator*(const fixed<size, scaling_factor_inverse>& operand){
-        fixed<size, scaling_factor_inverse> result{};
-        result.data = this->data * operand.data;
-        return result;
-    }
-
-    template<>
-    fixed<size, scaling_factor_inverse> operator/(const fixed<size, scaling_factor_inverse>& operand){
-        fixed<size, scaling_factor_inverse> result{};
-        result.data = this->data / operand.data;
-        return result;
-    }
+//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+//    fixed<size, scaling_factor_inverse> operator+(Number operand){
+//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
+//        return this* + fixedOperand;
+//    }
+//
+//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+//    fixed<size, scaling_factor_inverse> operator-(Number operand){
+//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
+//        return this* - fixedOperand;
+//    }
+//
+//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+//    fixed<size, scaling_factor_inverse> operator*(Number operand){
+//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
+//        return this* * fixedOperand;
+//    }
+//
+////    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+////    fixed<size, scaling_factor_inverse> operator/(Number operand){
+////        fixed<size, scaling_factor_inverse> fixedOperand{operand};
+////        return this / fixedOperand;
+////    }
+//
+//    template<>
+//    fixed<size, scaling_factor_inverse> operator+(const fixed<size, scaling_factor_inverse>& operand){
+//        fixed<size, scaling_factor_inverse> result{};
+//        result.data = this->data + operand.data;
+//        return result;
+//    }
+//
+//    template<>
+//    fixed<size, scaling_factor_inverse> operator-(const fixed<size, scaling_factor_inverse>& operand){
+//        fixed<size, scaling_factor_inverse> result{};
+//        result.data = this->data - operand.data;
+//        return result;
+//    }
+//
+//    template<>
+//    fixed<size, scaling_factor_inverse> operator*(const fixed<size, scaling_factor_inverse>& operand){
+//        fixed<size, scaling_factor_inverse> result{};
+//        result.data = this->data * operand.data;
+//        return result;
+//    }
+//
+//    template<>
+//    fixed<size, scaling_factor_inverse> operator/(const fixed<size, scaling_factor_inverse>& operand){
+//        fixed<size, scaling_factor_inverse> result{};
+//        result.data = this->data / operand.data;
+//        return result;
+//    }
 
 
 

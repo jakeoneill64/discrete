@@ -66,6 +66,26 @@ buildBoost(){
 
 }
 
+buildGoogleTest(){
+  cd googletest/
+  git submodule update --init
+
+  cmake .
+  make
+
+  for file in lib/*
+  do
+    cp "$file" ../../lib/
+  done
+
+  cp -R googletest/include/gtest/ ../../include/
+  cp -R googlemock/include/gmock/ ../../include/
+  git clean -df
+  git reset HEAD --hard
+
+  cd ..
+}
+
 buildSpdlog(){
   cd spdlog
   cmake .
@@ -116,6 +136,7 @@ buildGlfw
 buildGlm
 buildSpdlog
 buildBoost
+buildGoogleTest
 
 
 
