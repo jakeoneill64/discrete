@@ -14,7 +14,7 @@ buildGlm(){
   mv glm/gtx ../../include/glm
   mv glm/simd ../../include/glm
   git clean -df
-  git reset head --hard
+  git reset HEAD --hard
   cd ..
 
 
@@ -30,7 +30,7 @@ buildGlad(){
   mv include/glad/ ../../include/
   mv include/KHR ../../include/
   git clean -df
-  git reset head --hard
+  git reset HEAD --hard
   cd ..
 
 }
@@ -42,7 +42,7 @@ buildGlfw(){
   mv src/libglfw3.a ../../lib
   mv include/GLFW/ ../../include
   git clean -df
-  git reset head --hard
+  git reset HEAD --hard
   cd ..
 
 }
@@ -56,17 +56,11 @@ buildBoost(){
 
   [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
 
-  mkdir ../../include/boost
 
-  cd boost/
-  for file in *
-  do
-    [[ -L "$file" ]] && cp -RL "$file" ../../../include/boost/ || cp -R "$file" ../../../include/boost
-  done
-  cd ../
+  cp -RL boost ../../include/boost/
 
   git clean -df
-  git reset head --hard
+  git reset HEAD --hard
 
   cd ..
 
@@ -80,7 +74,7 @@ buildSpdlog(){
   mv libspdlog.a ../../lib/
   mv include/spdlog ../../include
   git clean -df
-  git reset head --hard
+  git reset HEAD --hard
   cd ..
 
 }
