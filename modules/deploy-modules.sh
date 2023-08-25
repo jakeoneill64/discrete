@@ -78,8 +78,8 @@ buildGoogleTest(){
     cp "$file" ../../lib/
   done
 
-  cp -R googletest/include/gtest/ ../../include/
-  cp -R googlemock/include/gmock/ ../../include/
+  cp -r googletest/include/gtest ../../include/
+  cp -r googlemock/include/gmock ../../include/
   git clean -df
   git reset HEAD --hard
 

@@ -25,13 +25,10 @@ add_executable(discrete ${SOURCE})
 # Create a separate test executable for each test source
 foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-    add_executable(build_${TEST_NAME} ${TEST_FILE})
+    add_executable(${TEST_NAME} ${TEST_FILE})
 
     # Link the test executable with the main project code and testing framework
-    target_link_libraries(build_${TEST_NAME})
-
-
-    add_custom_target(${TEST_NAME} COMMAND ./${TEST_NAME})
+    target_link_libraries(${TEST_NAME} gtest.a)
 
     # Add a test
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
