@@ -8,8 +8,10 @@
 #include <cinttypes>
 #include <cfloat>
 #include <type_traits>
+#include <algorithm>
 
-//TODO how about fixed_point with different sizes?
+//TODO should we limit conversion precision?
+//TODO increment / decrement operator ?
 template <std::size_t number>
 struct is_base_2 : std::integral_constant<
         bool,
@@ -20,160 +22,107 @@ struct is_base_2 : std::integral_constant<
 template <
         std::size_t size,
         std::size_t scaling_factor_inverse,
-        bool is_signed = false,
-        typename = typename std::enable_if_t< is_base_2<scaling_factor_inverse>::value> >
+        bool is_signed = true,
+        typename = typename std::enable_if_t< is_base_2<scaling_factor_inverse>::value>,
+        typename UnderlyingIntegerType =
+            typename std::conditional_t<(size == 8) && is_signed,
+                std::int8_t,
+            typename std::conditional_t<(size == 8) && !is_signed,
+                std::uint8_t,
+            typename std::conditional_t<(size == 16) && is_signed,
+                std::int16_t,
+            typename std::conditional_t<(size == 16) && !is_signed,
+                std::uint16_t,
+            typename std::conditional_t<(size == 32) && is_signed,
+                std::int32_t,
+            typename std::conditional_t<(size == 32) && !is_signed,
+                std::uint32_t,
+            typename std::conditional_t<(size == 64) && is_signed,
+                std::int64_t,
+            typename std::conditional_t<(size == 64) && !is_signed,
+                std::uint64_t,
+                void
+            >>>>>>>
+        >
+>
 class fixed{
 
 public:
 
-    using UInt = typename std::conditional<(size == 8), std::uint8_t,
-            typename std::conditional<(size == 16), std::uint16_t,
-                    typename std::conditional<(size == 32), std::uint32_t,
-                            typename std::conditional<(size == 64), std::uint64_t,
-                                    void>::type>::type>::type>::type;
-
-    // NOLINTBEGIN ======> clang-tidy complains about implicit conversions, which I want to enable.
-
+    // NOLINTBEGIN ====> clang-tidy complains about implicit conversions, which I want to enable.
+    //TODO assert that the constructor arguments are compatible with the type arguments
     template <
-            typename UnsignedFloatingPoint,
-            typename std::enable_if_t<
-                            std::is_floating_point_v<UnsignedFloatingPoint> &&
-                                std::is_unsigned_v<UnsignedFloatingPoint>,
-                            int > = 0>
-    fixed(const UnsignedFloatingPoint& number){
+            typename Number,
+            typename std::enable_if_t<std::is_arithmetic_v<Number>,int > = 0>
+    fixed(const Number& number){
         data = number * scaling_factor_inverse;
     }
 
-    template <
-            typename SignedFloatingPoint,
-            typename std::enable_if_t<
-                        std::is_floating_point_v<SignedFloatingPoint> &&
-                            std::is_signed_v<SignedFloatingPoint>,
-                        int> = 0>
-    fixed(const SignedFloatingPoint& number){
-        data = number << logBase2(scaling_factor_inverse);
-    }
-
-    template <
-            typename UnsignedInteger,
-            typename std::enable_if_t<
-                        std::is_integral_v<UnsignedInteger> &&
-                                std::is_unsigned_v<UnsignedInteger>,
-                        int> = 0>
-    fixed(const UnsignedInteger&){
-    }
-
-    template <
-            typename SignedInteger,
-            typename std::enable_if_t<
-                        std::is_integral_v<SignedInteger> &&
-                                std::is_signed_v<SignedInteger>,
-                                int> = 0>
-    fixed(const SignedInteger&){
-    }
-
     template<
-            typename UnsignedInteger,
-            std::enable_if_t
-                    <std::is_integral_v<UnsignedInteger> && !std::is_signed_v<UnsignedInteger>>* = nullptr>
-    operator UnsignedInteger(){
-
-    }
-
-    template<
-            typename SignedInteger,
-            std::enable_if_t
-                    <std::is_integral_v<SignedInteger> && std::is_signed_v<SignedInteger>>* = nullptr>
-    operator SignedInteger(){
-
-    }
-
-    template<
-            typename UnsignedFloatingPoint,
-            std::enable_if_t
-                    <std::is_floating_point_v<UnsignedFloatingPoint> && !std::is_signed_v<UnsignedFloatingPoint>>* = nullptr>
-    operator UnsignedFloatingPoint(){
-
-    }
-
-    template<
-            typename SignedFloatingPoint,
-            std::enable_if_t
-                    <std::is_floating_point_v<SignedFloatingPoint> && std::is_signed_v<SignedFloatingPoint>>* = nullptr>
-    operator SignedFloatingPoint(){
-
+            typename Number,
+            typename = typename std::enable_if_t<std::is_arithmetic_v<Number>>>
+    operator Number(){
+        return Number
+        {static_cast<Number>(data) / static_cast<UnderlyingIntegerType>(scaling_factor_inverse)};
     }
 
     // NOLINTEND
 
+    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+    fixed<size, scaling_factor_inverse> operator+(Number operand){
+        return (*this) + fixed<size, scaling_factor_inverse>{operand};
+    }
+
+    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+    fixed<size, scaling_factor_inverse> operator-(Number operand){
+        return (*this) - fixed<size, scaling_factor_inverse>{operand};
+    }
+
+    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+    fixed<size, scaling_factor_inverse> operator*(Number operand){
+        return (*this) * fixed<size, scaling_factor_inverse>{operand};
+    }
+
+    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
+    fixed<size, scaling_factor_inverse> operator/(Number operand){
+        return (*this) / fixed<size, scaling_factor_inverse>{operand};
+    }
 
 
-//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-//    fixed<size, scaling_factor_inverse> operator+(Number operand){
-//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-//        return this* + fixedOperand;
-//    }
-//
-//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-//    fixed<size, scaling_factor_inverse> operator-(Number operand){
-//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-//        return this* - fixedOperand;
-//    }
-//
-//    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-//    fixed<size, scaling_factor_inverse> operator*(Number operand){
-//        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-//        return this* * fixedOperand;
-//    }
-//
-////    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-////    fixed<size, scaling_factor_inverse> operator/(Number operand){
-////        fixed<size, scaling_factor_inverse> fixedOperand{operand};
-////        return this / fixedOperand;
-////    }
-//
-//    template<>
-//    fixed<size, scaling_factor_inverse> operator+(const fixed<size, scaling_factor_inverse>& operand){
-//        fixed<size, scaling_factor_inverse> result{};
-//        result.data = this->data + operand.data;
-//        return result;
-//    }
-//
-//    template<>
-//    fixed<size, scaling_factor_inverse> operator-(const fixed<size, scaling_factor_inverse>& operand){
-//        fixed<size, scaling_factor_inverse> result{};
-//        result.data = this->data - operand.data;
-//        return result;
-//    }
-//
-//    template<>
-//    fixed<size, scaling_factor_inverse> operator*(const fixed<size, scaling_factor_inverse>& operand){
-//        fixed<size, scaling_factor_inverse> result{};
-//        result.data = this->data * operand.data;
-//        return result;
-//    }
-//
-//    template<>
-//    fixed<size, scaling_factor_inverse> operator/(const fixed<size, scaling_factor_inverse>& operand){
-//        fixed<size, scaling_factor_inverse> result{};
-//        result.data = this->data / operand.data;
-//        return result;
-//    }
+    // NB. we take the precision from the current object, not the operand
+    template<size_t operand_size, size_t operand_scaling_factor>
+    fixed<size, scaling_factor_inverse> operator+(const fixed<operand_size, operand_scaling_factor>& operand){
+        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        result.data = this->data + operand.data;
+        return result;
+    }
+
+    template<size_t operand_size, size_t operand_scaling_factor>
+    fixed<size, scaling_factor_inverse> operator-(const fixed<operand_size, operand_scaling_factor>& operand){
+        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        result.data = this->data - operand.data;
+        return result;
+    }
+
+    template<size_t operand_size, size_t operand_scaling_factor>
+    fixed<size, scaling_factor_inverse> operator*(const fixed<operand_size, operand_scaling_factor>& operand){
+        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        result.data = this->data * operand.data;
+        return result;
+    }
+
+    template<size_t operand_size, size_t operand_scaling_factor>
+    fixed<size, scaling_factor_inverse> operator/(const fixed<operand_size, operand_scaling_factor>& operand){
+        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        result.data = this->data / operand.data;
+        return result;
+    }
 
 
 
 private:
 
-    constexpr char logBase2(u_int64_t scalingFactor){
-        char result{0};
-        while(scalingFactor != 1){
-            result++;
-            scalingFactor >>= 1;
-        }
-        return result;
-    }
-
-    UInt data;
+    UnderlyingIntegerType data;
     fixed() = default;
 
 };
