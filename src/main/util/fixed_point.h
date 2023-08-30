@@ -10,20 +10,31 @@
 #include <type_traits>
 #include <algorithm>
 
-//TODO should we limit conversion precision?
-//TODO increment / decrement operator ?
-template <std::size_t number>
-struct is_base_2 : std::integral_constant<
-        bool,
-        true
-        > {};
+constexpr bool is_base_2(uint64_t number){
+    while(number != 1){
+        if(number % 2 != 0)
+            return false;
+        number /= 2;
+    }
+    return true;
+}
+
+constexpr int64_t pow(int64_t number, uint8_t index){
+    int64_t current{number};
+    for(uint8_t i{1}; i <= index; i++){
+        current *= number;
+    }
+    return current;
+}
+
+
 
 // implementation details: https://en.wikipedia.org/wiki/Fixed-point_arithmetic
 template <
         std::size_t size,
-        std::size_t scaling_factor_inverse,
+        uint64_t scaling_factor_inverse,
         bool is_signed = true,
-        typename = typename std::enable_if_t< is_base_2<scaling_factor_inverse>::value>,
+        typename = typename std::enable_if_t<is_base_2(scaling_factor_inverse)>,
         typename UnderlyingIntegerType =
             typename std::conditional_t<(size == 8) && is_signed,
                 std::int8_t,
@@ -50,11 +61,14 @@ class fixed{
 public:
 
     // NOLINTBEGIN ====> clang-tidy complains about implicit conversions, which I want to enable.
-    //TODO assert that the constructor arguments are compatible with the type arguments
     template <
             typename Number,
             typename std::enable_if_t<std::is_arithmetic_v<Number>,int > = 0>
     fixed(const Number& number){
+        static_assert(
+            std::is_signed_v<Number> ? is_signed : true,
+            "cannot create unsigned fixed-point from signed arithmetic type"
+        );
         data = number * scaling_factor_inverse;
     }
 
@@ -62,8 +76,12 @@ public:
             typename Number,
             typename = typename std::enable_if_t<std::is_arithmetic_v<Number>>>
     operator Number(){
+        static_assert(
+            std::is_unsigned_v<Number> ? !is_signed : true,
+            "cannot convert signed fixed-point to an unsigned arithmetic type"
+        );
         return Number
-        {static_cast<Number>(data) / static_cast<UnderlyingIntegerType>(scaling_factor_inverse)};
+        {static_cast<Number>(static_cast<long double>(data) / static_cast<UnderlyingIntegerType>(scaling_factor_inverse))};
     }
 
     // NOLINTEND
@@ -88,32 +106,30 @@ public:
         return (*this) / fixed<size, scaling_factor_inverse>{operand};
     }
 
-
-    // NB. we take the precision from the current object, not the operand
-    template<size_t operand_size, size_t operand_scaling_factor>
+    template<size_t operand_size, uint64_t operand_scaling_factor>
     fixed<size, scaling_factor_inverse> operator+(const fixed<operand_size, operand_scaling_factor>& operand){
-        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data + operand.data;
         return result;
     }
 
-    template<size_t operand_size, size_t operand_scaling_factor>
+    template<size_t operand_size, uint64_t operand_scaling_factor>
     fixed<size, scaling_factor_inverse> operator-(const fixed<operand_size, operand_scaling_factor>& operand){
-        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data - operand.data;
         return result;
     }
 
-    template<size_t operand_size, size_t operand_scaling_factor>
+    template<size_t operand_size, uint64_t operand_scaling_factor>
     fixed<size, scaling_factor_inverse> operator*(const fixed<operand_size, operand_scaling_factor>& operand){
-        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data * operand.data;
         return result;
     }
 
-    template<size_t operand_size, size_t operand_scaling_factor>
+    template<size_t operand_size, uint64_t operand_scaling_factor>
     fixed<size, scaling_factor_inverse> operator/(const fixed<operand_size, operand_scaling_factor>& operand){
-        fixed<std::max(size, operand_size), scaling_factor_inverse> result{};
+        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data / operand.data;
         return result;
     }
@@ -126,5 +142,30 @@ private:
     fixed() = default;
 
 };
+
+using ufixed64_low = fixed<64, pow(2, 16), false>;
+using ufixed32_low = fixed<32, pow(2, 8), false>;
+using ufixed16_low = fixed<16, pow(2, 4), false>;
+using ufixed8_low = fixed<8, pow(2, 2), false>;
+using ufixed64_mid = fixed<64, pow(2, 32), false>;
+using ufixed32_mid = fixed<32, pow(2, 16), false>;
+using ufixed16_mid = fixed<16, pow(2, 8), false>;
+using ufixed8_mid = fixed<8, pow(2, 4), false>;
+using ufixed64_high = fixed<64, pow(2, 48), false>;
+using ufixed32_high = fixed<32, pow(2, 24), false>;
+using ufixed16_high = fixed<16, pow(2, 12), false>;
+using ufixed8_high = fixed<8, pow(2, 6), false>;
+using fixed64_low = fixed<64, pow(2, 16), true>;
+using fixed32_low = fixed<32, pow(2, 8), true>;
+using fixed16_low = fixed<16, pow(2, 4), true>;
+using fixed8_low = fixed<8, pow(2, 2), true>;
+using fixed64_mid = fixed<64, pow(2, 32), true>;
+using fixed32_mid = fixed<32, pow(2, 16), true>;
+using fixed16_mid = fixed<16, pow(2, 8), true>;
+using fixed8_mid = fixed<8, pow(2, 4), true>;
+using fixed64_high = fixed<64, pow(2, 48), true>;
+using fixed32_high = fixed<32, pow(2, 24), true>;
+using fixed16_high = fixed<16, pow(2, 12), true>;
+using fixed8_high = fixed<8, pow(2, 6), true>;
 
 #endif //DISCRETE_FIXED_POINT_H
