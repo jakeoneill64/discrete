@@ -6,7 +6,7 @@
 // so if fixed_point_conversions fails, others will likely fail too.
 TEST(fixed_point_suite, fixed_point_conversions) {
     fixed64_low fromUnsignedInteger{33};
-    fixed8_low fromUnsignedFloat{3.5f};
+    fixed16_low fromUnsignedFloat{3.5f};
     fixed64_low fromInteger{-33};
     fixed32_high fromFloat{-33.5f};
     int64_t unsignedIntegerResult = fromUnsignedInteger;
@@ -22,12 +22,12 @@ TEST(fixed_point_suite, fixed_point_conversions) {
 
 TEST(fixed_point_suite, fixed_point_addition) {
     fixed64_low fromUnsignedInteger{33};
-    fixed8_low fromUnsignedFloat{3.5f};
+    fixed64_low fromUnsignedFloat{3.5f};
     fixed64_low fromInteger{-33};
     fixed32_high fromFloat{-33.5f};
 
     fixed64_low unsignedIntegerPlusSignedDouble = fromUnsignedInteger + (-34.5f);
-    fixed8_low unsignedFloatPlusSignedInteger = fromUnsignedFloat + (-1);
+    fixed64_low unsignedFloatPlusSignedInteger = fromUnsignedFloat + (-1);
     fixed64_low signedIntegerPlusUnsignedDouble = fromInteger + 22.5;
     fixed32_high signedFloatPlusUnsignedInteger = fromFloat + 0.5f;
 
@@ -42,16 +42,18 @@ TEST(fixed_point_suite, fixed_point_addition) {
     ASSERT_EQ(unsignedFloatResult, -10.5);
 }
 
-TEST(fixed_point_suite, fixed_point_subtraction) {
-
-}
-
 TEST(fixed_point_suite, fixed_point_multiplication) {
+    fixed64_low twoInteger{2};
+    fixed64_low minusThreeSignedFloat{-3.0f};
 
-}
+    fixed64_low twoTimesMinusTwoFloat = twoInteger * -2.0f;
+    fixed64_low minusThreeFloatTimesMinusOneInt = minusThreeSignedFloat * (-1);
 
-TEST(fixed_point_suite, fixed_point_division) {
+    double twoTimesMinusTwoFloatResult = twoTimesMinusTwoFloat;
+    double minusThreeFloatTimesMinusOneIntResult = minusThreeFloatTimesMinusOneInt;
 
+    ASSERT_EQ(twoTimesMinusTwoFloatResult, -4.0);
+    ASSERT_EQ(minusThreeFloatTimesMinusOneIntResult, 3.0);
 }
 
 int main(int argc, char** argv) {
