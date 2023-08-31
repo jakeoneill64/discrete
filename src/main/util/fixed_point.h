@@ -103,13 +103,7 @@ public:
         return (*this) * fixed<size, scaling_factor_inverse>{operand};
     }
 
-    template <
-            typename Number,
-            typename = std::enable_if_t<
-                                std::is_arithmetic_v<Number> ||
-                                std::is_same_v<fixed, Number>
-                        >
-            >
+    template < typename Number, typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
     fixed<size, scaling_factor_inverse> operator/(Number operand){
         return (*this) / fixed<size, scaling_factor_inverse>{operand};
     }
