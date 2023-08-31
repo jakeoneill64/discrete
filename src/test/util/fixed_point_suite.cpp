@@ -56,6 +56,20 @@ TEST(fixed_point_suite, fixed_point_multiplication) {
     ASSERT_EQ(minusThreeFloatTimesMinusOneIntResult, 3.0);
 }
 
+TEST(fixed_point_suite, fixed_point_division){
+    fixed64_low twoInteger{2};
+    fixed64_low minusThreeSignedFloat{-3.0f};
+
+    fixed64_low twoDividedByMinusTwoFloat = twoInteger / -2.0f;
+    fixed64_low minusThreeFloatDividedByMinusOneInt = minusThreeSignedFloat / (-1);
+
+    double twoTimesMinusTwoFloatResult = twoDividedByMinusTwoFloat;
+    double minusThreeFloatTimesMinusOneIntResult = minusThreeFloatDividedByMinusOneInt;
+
+    ASSERT_EQ(twoTimesMinusTwoFloatResult, -1.0);
+    ASSERT_EQ(minusThreeFloatTimesMinusOneIntResult, 3.0);
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
