@@ -11,12 +11,7 @@
 #include <algorithm>
 
 constexpr bool is_base_2(uint64_t number){
-    while(number != 1){
-        if(number % 2 != 0)
-            return false;
-        number /= 2;
-    }
-    return true;
+    return (number != 1) && ((number & (number - 1)) == 0);
 }
 
 constexpr int64_t pow(int64_t number, uint8_t index){
@@ -71,9 +66,11 @@ public:
     fixed( const fixed & ) = default;
 
     template<
-            typename Number,
-            typename = typename std::enable_if_t<std::is_arithmetic_v<Number>>>
-    operator Number(){
+        typename Number,
+        typename = typename std::enable_if_t<std::is_arithmetic_v<Number>>
+    >
+    operator Number() const
+    {
         static_assert(
             std::is_unsigned_v<Number> ? !is_signed : true,
             "cannot convert signed fixed-point to an unsigned arithmetic type"
@@ -89,41 +86,48 @@ public:
     // NOLINTEND
 
     template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator+(Number operand){
+    fixed<size, scaling_factor_inverse> operator+(Number operand) const
+    {
         return (*this) + fixed<size, scaling_factor_inverse>{operand};
     }
 
     template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator-(Number operand){
+    fixed<size, scaling_factor_inverse> operator-(Number operand) const
+    {
         return (*this) - fixed<size, scaling_factor_inverse>{operand};
     }
 
     template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator*(Number operand){
+    fixed<size, scaling_factor_inverse> operator*(Number operand) const
+    {
         return (*this) * fixed<size, scaling_factor_inverse>{operand};
     }
 
     template < typename Number, typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator/(Number operand){
+    fixed<size, scaling_factor_inverse> operator/(Number operand) const
+    {
         return (*this) / fixed<size, scaling_factor_inverse>{operand};
     }
 
     template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator+(const fixed<operand_size, operand_scaling_factor>& operand){
+    fixed<size, scaling_factor_inverse> operator+(const fixed<operand_size, operand_scaling_factor>& operand) const
+    {
         fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data + operand.data;
         return result;
     }
 
     template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator-(const fixed<operand_size, operand_scaling_factor>& operand){
+    fixed<size, scaling_factor_inverse> operator-(const fixed<operand_size, operand_scaling_factor>& operand) const
+    {
         fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = this->data - operand.data;
         return result;
     }
 
     template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator*(const fixed<operand_size, operand_scaling_factor>& operand){
+    fixed<size, scaling_factor_inverse> operator*(const fixed<operand_size, operand_scaling_factor>& operand) const
+    {
         fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data =
             static_cast<decltype(result.data)>(
@@ -134,7 +138,8 @@ public:
     }
 
     template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator/(const fixed<operand_size, operand_scaling_factor>& operand){
+    fixed<size, scaling_factor_inverse> operator/(const fixed<operand_size, operand_scaling_factor>& operand) const
+    {
         fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
         result.data = static_cast<decltype(result.data)>(
                 (this->data) /
@@ -168,5 +173,7 @@ using fixed16_mid = fixed<16, pow(2, 8), true>;
 using fixed64_high = fixed<64, pow(2, 48), true>;
 using fixed32_high = fixed<32, pow(2, 24), true>;
 using fixed16_high = fixed<16, pow(2, 12), true>;
+
+
 
 #endif //DISCRETE_FIXED_POINT_H
