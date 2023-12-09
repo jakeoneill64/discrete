@@ -15,9 +15,10 @@ template<>
 struct std::hash<vec3>{
     size_t operator()(const vec3& vector){
         size_t result{0};
-        boost::hash_combine(result, static_cast<long double>(vector.i));
-        boost::hash_combine(result, static_cast<long double>(vector.j));
-        boost::hash_combine(result, static_cast<long double>(vector.k));
+        static std::hash<fixed64_mid> fixed_hasher;
+        boost::hash_combine(result, fixed_hasher(vector.i));
+        boost::hash_combine(result, fixed_hasher(vector.j));
+        boost::hash_combine(result, fixed_hasher(vector.k));
         return result;
     }
 };

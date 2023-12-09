@@ -3,7 +3,6 @@
 //
 
 #include "input.h"
-#include "event.h"
 
 using namespace discrete;
 
@@ -34,9 +33,5 @@ actionByKey{
 }
 {}
 
-//void discrete::updateInputManager(GLFWwindow* window, InputManager* inputManager){
-//    delete InputManager::activeInputManager;
-//    InputManager::activeInputManager = inputManager;
-//    inputManager->onActivate(window);
-//}
+
 

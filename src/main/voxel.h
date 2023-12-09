@@ -25,9 +25,11 @@ struct std::hash<Voxel> {
 
     size_t operator()(const Voxel &voxel) const {
         size_t result{0};
-        boost::hash_combine(result, static_cast<double>(voxel.diameter));
-        boost::hash_combine(result, voxel.position);
-        boost::hash_combine(result, voxel.velocity);
+        static std::hash<vec3> vector_hasher;
+        static std::hash<ufixed32_mid> fixed_point_hasher;
+        boost::hash_combine(result, fixed_point_hasher(voxel.diameter));
+        boost::hash_combine(result, vector_hasher(voxel.position));
+        boost::hash_combine(result, vector_hasher(voxel.velocity));
         return result;
     }
 
