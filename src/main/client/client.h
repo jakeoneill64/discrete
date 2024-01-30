@@ -6,12 +6,21 @@
 #define DISCRETE_CLIENT_H
 
 #include <atomic>
+#include "boost/url.hpp"
 
-namespace client{
-    //std::atomic<bool> should_run; // TODO we can use some kind of provider pattern here,
-    // or something else because I am not a fan of this
-    int run();
-}
+// requirements
+// client needs to send events via network call
+// if the client is being run locally, the server and client will share a copy of the world,
+// otherwise
+class Client{
+    public:
+        static Client& run(const boost::url& serverURL);
+        void stop();
+    private:
+        Client() = default;
+        void loop();
+        std::atomic<bool> should_run;
+};
 
 
 #endif //DISCRETE_CLIENT_H

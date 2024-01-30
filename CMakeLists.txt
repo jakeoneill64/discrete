@@ -19,13 +19,20 @@ include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
 file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
-
 add_executable(discrete ${SOURCE})
 
 # Create a separate test executable for each test source
 foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-    add_executable(${TEST_NAME} ${TEST_FILE})
+
+    execute_process(
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
+        OUTPUT_VARIABLE LINK_DEPS
+    )
+
+    set(TEST_SOURCES ${LINK_DEPS} ${TEST_FILE})
+
+    add_executable(${TEST_NAME} ${TEST_SOURCES})
 
     # Link the test executable with the main project code and testing framework
     target_link_libraries(${TEST_NAME} gtest.a)

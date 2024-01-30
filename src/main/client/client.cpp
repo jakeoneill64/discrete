@@ -4,12 +4,8 @@
 
 #include "client.h"
 
-#include "glad/glad.h"
-#include "glm/glm.hpp"
-
-
-int client::run()
-{
+//int client::run()
+//{x
 
 //    m_window = discrete::initialiseGLFW();
 //    RenderContext renderContext = createGLContext("/Users/jake/Dev/discrete/src/resources/shader/vertex-basic.glsl","/Users/jake/Dev/discrete/src/resources/shader/fragment-basic.glsl");
@@ -26,8 +22,8 @@ int client::run()
 //
 //    }
 
-    return 0;
-}
+//    return 0;
+//}
 
 //Client::Client() noexcept
 //:
@@ -97,3 +93,19 @@ int client::run()
 //}
 
 
+Client &Client::run(const boost::url &serverURL) {
+    Client* client{new Client()};
+    client->loop();
+    return *client;
+}
+
+// TODO we will probably have to use some dependency injection here.
+void Client::stop() {
+    should_run = false;
+}
+
+void Client::loop() {
+    while(should_run){
+        
+    }
+}

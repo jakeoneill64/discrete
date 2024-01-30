@@ -8,9 +8,4 @@
 
 int main(){
 
-    auto server_result = std::async(server::run);
-    auto client_result = std::async(client::run);
-
-    return server_result.get() & client_result.get();
-
 }
