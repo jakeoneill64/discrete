@@ -8,7 +8,7 @@
 TEST(datagram_suite, datagram_send){
     int t{1};
     DatagramSocket sock{false};
-    sock.send({const_cast<char *>("hello world"), sizeof("hello world")}, "172.0.0.1", 1637);
+    sock.send({const_cast<char *>("hello natasha"), sizeof("hello natasha")}, "127.0.0.1", 16371);
     int x{0};
 }
 

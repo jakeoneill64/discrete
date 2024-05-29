@@ -10,7 +10,8 @@
 
 
 // server and client should be able to share physics and events
-// server receives events over the network and has an active connection for each client
+// server receives and sends events over the network in UDP packets
+// with a synchronisation event less frequently
 class Server{
     public:
         static Server& run(uint32_t binding);

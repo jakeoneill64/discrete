@@ -15,11 +15,28 @@ endif()
 
 link_libraries(libglad.a libglfw3.a libspdlog.a)
 
+file(GLOB_RECURSE RESOURCE "resources/*")
+
+set(DATA_FILES)
+foreach(RESOURCE_FILE ${RESOURCE})
+    get_filename_component(RESOURCE_FILE_NAME ${RESOURCE_FILE} NAME_WE)
+    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${RESOURCE_FILE_NAME}.dat)
+    list(APPEND DATA_FILES ${DATA_FILE})
+    add_custom_command(
+        OUTPUT ${DATA_FILE}
+        COMMAND xxd -i ${RESOURCE_FILE} ${DATA_FILE}
+    )
+endforeach()
+
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
 file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
+
+
 add_executable(discrete ${SOURCE})
+add_custom_target(GenerateResources ALL DEPENDS ${DATA_FILES})
+add_dependencies(discrete GenerateResources)
 
 # Create a separate test executable for each test source
 foreach(TEST_FILE ${TEST})

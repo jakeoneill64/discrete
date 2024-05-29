@@ -12,13 +12,18 @@
 // client needs to send events via network call
 // if the client is being run locally, the server and client will share a copy of the world,
 // otherwise
+
+class ClientConfig(){
+
+}
+
 class Client{
     public:
         static Client& run(const boost::url& serverURL);
         void stop();
     private:
         Client() = default;
-        void loop();
+        void start();
         std::atomic<bool> should_run;
 };
 

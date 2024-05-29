@@ -11,8 +11,9 @@
 namespace discrete{
 
     constexpr const char* ENGINE_NAME = "discrete";
-    constexpr const char* CLIENT_LOGGER_NAME = "client";
-    constexpr const char* SERVER_LOGGER_NAME = "server";
+    constexpr const char* CLIENT_LOGGER_NAME = "discrete-client";
+    constexpr const char* SERVER_LOGGER_NAME = "discrete-server";
+    constexpr const char* CLIENT_CONFIG_FILE = ""
 
     constexpr unsigned int GL_MAJOR = 3;
     constexpr unsigned int GL_MINOR = 3;

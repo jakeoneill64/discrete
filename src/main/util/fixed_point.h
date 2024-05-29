@@ -53,10 +53,9 @@ friend struct std::hash<fixed<size, scaling_factor_inverse, is_signed>>;
 
 public:
 
-    // NOLINTBEGIN ====> clang-tidy complains about implicit conversions, which I want to enable.
     template <
             typename Number,
-            typename std::enable_if_t<std::is_arithmetic_v<Number>> = 0>
+            typename std::enable_if_t<std::is_arithmetic_v<Number> , int> = 0>
     fixed(const Number& number){
         static_assert(
             std::is_signed_v<Number> ? is_signed : true,
@@ -85,70 +84,6 @@ public:
         ;
     }
 
-    // NOLINTEND
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator+(Number operand) const
-    {
-        return (*this) + fixed<size, scaling_factor_inverse>{operand};
-    }
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator-(Number operand) const
-    {
-        return (*this) - fixed<size, scaling_factor_inverse>{operand};
-    }
-
-    template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator*(Number operand) const
-    {
-        return (*this) * fixed<size, scaling_factor_inverse>{operand};
-    }
-
-    template < typename Number, typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
-    fixed<size, scaling_factor_inverse> operator/(Number operand) const
-    {
-        return (*this) / fixed<size, scaling_factor_inverse>{operand};
-    }
-
-    template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator+(const fixed<operand_size, operand_scaling_factor>& operand) const
-    {
-        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
-        result.data = this->data + operand.data;
-        return result;
-    }
-
-    template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator-(const fixed<operand_size, operand_scaling_factor>& operand) const
-    {
-        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
-        result.data = this->data - operand.data;
-        return result;
-    }
-
-    template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator*(const fixed<operand_size, operand_scaling_factor>& operand) const
-    {
-        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
-        result.data =
-            static_cast<decltype(result.data)>(
-                (this->data) *
-                (static_cast<long double>(operand.data) / operand_scaling_factor)
-            );
-        return result;
-    }
-
-    template<size_t operand_size, uint64_t operand_scaling_factor>
-    fixed<size, scaling_factor_inverse> operator/(const fixed<operand_size, operand_scaling_factor>& operand) const
-    {
-        fixed<std::max(size, operand_size), std::max(operand_scaling_factor, scaling_factor_inverse)> result{};
-        result.data = static_cast<decltype(result.data)>(
-                (this->data) /
-                (static_cast<long double>(operand.data) / operand_scaling_factor)
-        );
-        return result;
-    }
 
 private:
 
@@ -157,28 +92,9 @@ private:
 
 };
 
-using ufixed64_low = fixed<64, power(2, 16), false>;
-using ufixed32_low = fixed<32, power(2, 8), false>;
-using ufixed16_low = fixed<16, power(2, 4), false>;
-using ufixed64_mid = fixed<64, power(2, 32), false>;
-using ufixed32_mid = fixed<32, power(2, 16), false>;
-using ufixed16_mid = fixed<16, power(2, 8), false>;
-using ufixed64_high = fixed<64, power(2, 48), false>;
-using ufixed32_high = fixed<32, power(2, 24), false>;
-using ufixed16_high = fixed<16, power(2, 12), false>;
-using fixed64_low = fixed<64, power(2, 16), true>;
-using fixed32_low = fixed<32, power(2, 8), true>;
-using fixed16_low = fixed<16, power(2, 4), true>;
-using fixed64_mid = fixed<64, power(2, 32), true>;
-using fixed32_mid = fixed<32, power(2, 16), true>;
-using fixed16_mid = fixed<16, power(2, 8), true>;
-using fixed64_high = fixed<64, power(2, 48), true>;
-using fixed32_high = fixed<32, power(2, 24), true>;
-using fixed16_high = fixed<16, power(2, 12), true>;
-
-template<std::size_t S, uint64_t T, bool Z>
-struct std::hash<fixed<S, T, Z>>{
-    std::size_t operator()(const fixed<S, T, Z>& number){
+template<std::size_t Size, uint64_t ScalingFactorInverse, bool Signed>
+struct std::hash<fixed<Size, ScalingFactorInverse, Signed>>{
+        std::size_t operator()(::fixed<Size, ScalingFactorInverse, Signed> number) const {
         static std::hash<decltype(number.data)> hasher{};
         return hasher(number.data);
     }
