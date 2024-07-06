@@ -1,19 +1,19 @@
-//
-// Created by Jake M O'Neill on 05/11/2023.
-//
+#ifndef DISCRETE_VECTOR_H
+#define DISCRETE_VECTOR_H
 
-#ifndef DISCRETE_TYPES_H
-#define DISCRETE_TYPES_H
-#include "util/fixed_point.h"
+#include "fixed_point.h"
 #include "boost/functional/hash.hpp"
 
-using vec3 = struct {
-    fixed64_mid i, j, k;
+namespace discrete {
+
+    struct vec3 {
+        fixed64_mid i, j, k;
+    };
 };
 
 template<>
-struct std::hash<vec3>{
-    size_t operator()(const vec3& vector){
+struct std::hash<discrete::vec3>{
+    size_t operator()(const discrete::vec3& vector){
         size_t result{0};
         static std::hash<fixed64_mid> fixed_hasher;
         boost::hash_combine(result, fixed_hasher(vector.i));
@@ -23,4 +23,5 @@ struct std::hash<vec3>{
     }
 };
 
-#endif //DISCRETE_TYPES_H
+
+#endif //DISCRETE_VECTOR_H

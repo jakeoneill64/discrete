@@ -13,14 +13,12 @@ namespace discrete{
     constexpr const char* ENGINE_NAME = "discrete";
     constexpr const char* CLIENT_LOGGER_NAME = "discrete-client";
     constexpr const char* SERVER_LOGGER_NAME = "discrete-server";
-    constexpr const char* CLIENT_CONFIG_FILE = ""
+    constexpr const char* DEFAULT_CLIENT_CONFIG_FILE = "default-client-config.dat";
+    constexpr const char* CLIENT_CONFIG_FILE = ".discrete/client-config.json";
+    constexpr const char* WORLD_DATA_DIR = ".discrete/world/";
 
-    constexpr unsigned int GL_MAJOR = 3;
-    constexpr unsigned int GL_MINOR = 3;
     constexpr unsigned int GL_ELEMENT_BUFFER_SIZE = sizeof(unsigned int) * 5 * 1536; //ie 3/2 * element buffer indices per vertex
 
-    constexpr unsigned int WINDOW_START_WIDTH = 800;
-    constexpr unsigned int WINDOW_START_HEIGHT = 600;
 
 };
 

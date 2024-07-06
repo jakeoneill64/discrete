@@ -13,18 +13,26 @@
 // if the client is being run locally, the server and client will share a copy of the world,
 // otherwise
 
-class ClientConfig(){
+struct ClientConfig{
+    uint GL_VERSION_MAJOR;
+    uint GL_VERSION_MINOR;
+    uint WINDOW_START_HEIGHT;
+    uint WINDOW_START_WIDTH;
+    const char* WINDOW_TITLE;
+};
 
-}
-
+//client -> window, render, audio, networking, input
+//engine -> physics & logic, configurable as a game
+//server -> networking, sync
 class Client{
     public:
-        static Client& run(const boost::url& serverURL);
+        Client();
+        void updateConfiguration(ClientConfig configuration);
         void stop();
     private:
-        Client() = default;
         void start();
-        std::atomic<bool> should_run;
+        std::atomic<bool> m_shouldRun;
+        ClientConfig m_clientConfig;
 };
 
 

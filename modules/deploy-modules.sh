@@ -87,7 +87,7 @@ buildGoogleTest(){
 }
 
 buildSpdlog(){
-  cd spdlog
+  cd spdlog #TODO code smell
   cmake .
   make
 

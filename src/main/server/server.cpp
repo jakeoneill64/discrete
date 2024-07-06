@@ -3,28 +3,27 @@
 //
 
 #include "server.h"
-#include "space.h"
 #include <memory>
 
 Server& Server::run(u_int32_t port) {
-    auto space = std::shared_ptr<Space>(new Space());
-    run(space, port);
+//    auto space = std::shared_ptr<Space>(new Space());
+//    run(space, port);
 }
 
-Server& Server::run(std::shared_ptr<Space> space, u_int32_t port) {
-    Server* server{new Server()};
-    server->loop(space);
-    return *server;
-}
+//Server& Server::run(std::shared_ptr<Space> space, u_int32_t port) {
+//    Server* server{new Server()};
+//    server->loop(space);
+//    return *server;
+//}
 
 void Server::stop() {
     // TODO unbind
     should_run = false;
 }
 
-void Server::loop(std::shared_ptr<Space> space) {
-    while(should_run){
-        // Receive events
-        // step physics
-    }
-}
+//void Server::loop(std::shared_ptr<Space> space) {
+//    while(should_run){
+//        // Receive events
+//        // step physics
+//    }
+//}

@@ -19,7 +19,7 @@
 [submodule "modules/boost"]
 	path = modules/boost
 	url = git@github.com:boostorg/boost.git
-	branch = 564e2ac # tag: boost-1.83.0
+	branch = ab7968a # tag: boost-1.85.0
 	ignore = all
 
 [submodule "modules/spdlog"]
@@ -31,5 +31,5 @@
 [submodule "modules/googletest"]
 	path = modules/googletest
 	url = git@github.com:google/googletest.git
-    branch = f8d7d77 # tag: v1.14.0
+    branch = 1d17ea141d2c11b8917d2c7d029f1c4e2b9769b2
     ignore = all

@@ -8,15 +8,16 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <vector>
 #include <memory>
+#include "constants.h"
 
 void log(Logger logger, const std::string &message, spdlog::level::level_enum log_level){
 
     static std::array
             <
-            std::string,
-            static_cast<size_t>(Logger::LOGGER_COUNT)
+                std::string,
+                static_cast<size_t>(Logger::LOGGER_COUNT)
             >
-            logger_names{"server", "client"};
+            logger_names{discrete::SERVER_LOGGER_NAME, discrete::CLIENT_LOGGER_NAME};
 
     if(logger == Logger::LOGGER_COUNT) return;
 

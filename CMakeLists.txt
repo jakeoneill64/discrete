@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.28.1)
 project(discrete)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(lib)
 add_compile_definitions(DISCRETE_DEBUG)
 
@@ -35,6 +36,7 @@ file(GLOB_RECURSE TEST "src/test/*")
 
 
 add_executable(discrete ${SOURCE})
+
 add_custom_target(GenerateResources ALL DEPENDS ${DATA_FILES})
 add_dependencies(discrete GenerateResources)
 
@@ -43,8 +45,9 @@ foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     execute_process(
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
+        COMMAND /opt/homebrew/Cellar/python@3.12/3.12.4/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE LINK_DEPS
+        ECHO_OUTPUT_VARIABLE
     )
 
     set(TEST_SOURCES ${LINK_DEPS} ${TEST_FILE})

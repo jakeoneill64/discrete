@@ -100,11 +100,21 @@ Client &Client::run(const boost::url &serverURL) {
 }
 
 void Client::stop() {
-    should_run = false;
+    m_shouldRun = false;
 }
 
 void Client::start() {
-    while(should_run){
+    while(m_shouldRun){
         
     }
+}
+
+void Client::updateConfiguration(ClientConfig configuration) {
+
+}
+
+
+
+Client::Client() {
+
 }

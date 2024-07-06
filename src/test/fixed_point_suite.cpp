@@ -7,12 +7,15 @@
 TEST(fixed_point_suite, fixed_point_conversions) {
     fixed64_low fromUnsignedInteger{33};
     fixed16_low fromUnsignedFloat{3.5f};
-    fixed64_low fromInteger{-33};
+    fixed16_mid fromAnotherInteger{44};
+    fixed64_mid fromInteger{-33};
     fixed32_high fromFloat{-33.5f};
     int64_t unsignedIntegerResult = fromUnsignedInteger;
     int8_t signedIntegerResult = fromInteger;
     double unsignedFloatResult = fromUnsignedFloat;
     float signedFloatResult = fromFloat;
+    unsigned int anotherIntegerResult = fromAnotherInteger;
+    ASSERT_EQ(anotherIntegerResult, 44);
     ASSERT_EQ(signedFloatResult, -33.5);
     ASSERT_EQ(unsignedIntegerResult, 33);
     ASSERT_EQ(signedIntegerResult, -33);
