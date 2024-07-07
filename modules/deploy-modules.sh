@@ -1,102 +1,116 @@
 #!/bin/bash
 
 buildGlm(){
-
-  cd glm
-  cmake .
-  make
-  mkdir  ../../include/glm
-  mv glm/libglm_static.a ../../lib
-  mv glm/*.hpp ../../include/glm
-  mv glm/gtc ../../include/glm
-  mv glm/detail ../../include/glm
-  mv glm/ext ../../include/glm
-  mv glm/gtx ../../include/glm
-  mv glm/simd ../../include/glm
-  git clean -df
-  git reset HEAD --hard
-  cd ..
-
-
+  (
+    cd glm
+    cmake .
+    make
+    mkdir  ../../include/glm
+    mv glm/libglm_static.a ../../lib
+    mv glm/*.hpp ../../include/glm
+    mv glm/gtc ../../include/glm
+    mv glm/detail ../../include/glm
+    mv glm/ext ../../include/glm
+    mv glm/gtx ../../include/glm
+    mv glm/simd ../../include/glm
+    git clean -df
+    git reset HEAD --hard
+  )
 }
 
 buildGlad(){
+  (
+    cd glad
+    cmake .
+    make
 
-  cd glad
-  cmake .
-  make
+    mv libglad.a ../../lib
+    mv include/glad/ ../../include/
+    mv include/KHR ../../include/
+    git clean -df
+    git reset HEAD --hard
+  )
+}
 
-  mv libglad.a ../../lib
-  mv include/glad/ ../../include/
-  mv include/KHR ../../include/
-  git clean -df
-  git reset HEAD --hard
-  cd ..
+buildYamlCpp(){
+  (
+    cd yaml-cpp
+    cmake .
+    make
 
+    mv libyaml-cpp.a ../../lib
+    mv include/yaml-cpp/ ../../include/
+    git clean -df
+    git reset HEAD --hard
+  )
 }
 
 buildGlfw(){
-  cd glfw
-  cmake .
-  make
-  mv src/libglfw3.a ../../lib
-  mv include/GLFW/ ../../include
-  git clean -df
-  git reset HEAD --hard
-  cd ..
+  (
+    cd glfw
+    cmake .
+    make
+    mv src/libglfw3.a ../../lib
+    mv include/GLFW/ ../../include
+    git clean -df
+    git reset HEAD --hard
+  )
 
 }
 
 buildBoost(){
 
-  cd boost/
-  git submodule update --init
-  ./bootstrap.sh
-  ./b2
+  (
+    cd boost/
+    git submodule update --init
+    ./bootstrap.sh
+    ./b2
 
-  [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
+    [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
 
 
-  cp -RL boost ../../include/boost/
+    cp -RL boost ../../include/boost/
 
-  git clean -df
-  git reset HEAD --hard
+    git clean -df
+    git reset HEAD --hard
 
-  cd ..
+  )
 
 }
 
 buildGoogleTest(){
-  cd googletest/
-  git submodule update --init
+  (
+    cd googletest/
+    git submodule update --init
 
-  cmake .
-  make
+    cmake .
+    make
 
-  for file in lib/*
-  do
-    cp "$file" ../../lib/
-  done
+    for file in lib/*
+    do
+      cp "$file" ../../lib/
+    done
 
-  cp -r googletest/include/gtest ../../include/
-  cp -r googlemock/include/gmock ../../include/
-  git clean -df
-  git reset HEAD --hard
 
-  cd ..
+    cp -r googletest/include/gtest ../../include/
+    cp -r googlemock/include/gmock ../../include/
+    git clean -df
+    git reset HEAD --hard
+
+  )
 }
 
 buildSpdlog(){
-  cd spdlog #TODO code smell
-  cmake .
-  make
+  (
+    cd spdlog
+    cmake .
+    make
 
-  mv libspdlog.a ../../lib/
-  mv include/spdlog ../../include
-  git clean -df
-  git reset HEAD --hard
-  cd ..
-
+    mv libspdlog.a ../../lib/
+    mv include/spdlog ../../include
+    git clean -df
+    git reset HEAD --hard
+  )
 }
 
 CURRENT_DIR="$(cd "$(dirname  "$0")" >/dev/null; pwd -P)"
@@ -137,13 +151,4 @@ buildGlm
 buildSpdlog
 buildBoost
 buildGoogleTest
-
-
-
-
-
-
-
-
-
-
+buildYamlCpp

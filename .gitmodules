@@ -33,3 +33,9 @@
 	url = git@github.com:google/googletest.git
     branch = 1d17ea141d2c11b8917d2c7d029f1c4e2b9769b2
     ignore = all
+
+[submodule "modules/yaml-cpp"]
+	path = modules/yaml-cpp
+	url = git@github.com:jbeder/yaml-cpp.git
+	branch = f7320141120f720aecc4c32be25586e7da9eb978
+    ignore = all
