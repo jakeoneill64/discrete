@@ -6,7 +6,10 @@
 #define DISCRETE_CLIENT_H
 
 #include <atomic>
+#include <memory>
 #include "boost/url.hpp"
+#include "GLFW/glfw3.h"
+#include "engine/engine.h"
 
 // requirements
 // client needs to send events via network call
@@ -14,11 +17,17 @@
 // otherwise
 
 struct ClientConfig{
-    uint GL_VERSION_MAJOR;
-    uint GL_VERSION_MINOR;
-    uint WINDOW_START_HEIGHT;
-    uint WINDOW_START_WIDTH;
+    int GL_VERSION_MAJOR;
+    int GL_VERSION_MINOR;
+    int WINDOW_START_HEIGHT;
+    int WINDOW_START_WIDTH;
     const char* WINDOW_TITLE;
+};
+
+struct DestroyGLFWWindow{
+
+    void operator()(GLFWwindow* ptr);
+
 };
 
 //client -> window, render, audio, networking, input
@@ -26,13 +35,22 @@ struct ClientConfig{
 //server -> networking, sync
 class Client{
     public:
-        Client();
+        // unfortunately this pattern (or similar workarounds) is necessary
+        // for the glfw callbacks.
+        static Client& instance(){
+            static Client singleton{};
+            return singleton;
+        }
         void updateConfiguration(ClientConfig configuration);
-        void stop();
     private:
-        void start();
-        std::atomic<bool> m_shouldRun;
+
+        Client();
+        //pass a callback to things that need to set this.
+        std::atomic_bool m_shouldRun;
+        std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
         ClientConfig m_clientConfig;
+        Engine m_engine;
+
 };
 
 

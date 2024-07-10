@@ -45,7 +45,7 @@ foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     execute_process(
-        COMMAND /opt/homebrew/Cellar/python@3.12/3.12.4/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
+        COMMAND /usr/local/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripting/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE LINK_DEPS
         ECHO_OUTPUT_VARIABLE
     )

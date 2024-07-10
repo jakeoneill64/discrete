@@ -1,14 +1,20 @@
-//
-// Created by Jake M O'Neill on 31/05/2024.
-//
-
 #ifndef DISCRETE_ENGINE_H
 #define DISCRETE_ENGINE_H
+
+#include "event/EventManager.h"
 
 // encapsulates space / world info
 // handles events
 // steps physics / game logic.
-class Engine{
+class Engine : public EventManager{
+
+public:
+
+
+
+private:
+
+
 
 };
 

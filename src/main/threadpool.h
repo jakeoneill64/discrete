@@ -9,6 +9,7 @@
 #include <thread>
 #include <vector>
 #include <queue>
+#include <functional>
 
 class ThreadPool{
 public:
@@ -21,6 +22,7 @@ public:
 private:
 
     void loop();
+    //TODO make this atomic
     bool m_shouldRun;
     std::queue<std::function<void()>> m_jobs;
     std::mutex m_mutex;
@@ -28,11 +30,5 @@ private:
     std::condition_variable m_conditionVariable;
 
 };
-
-const ThreadPool& shared_threadpool(){
-    static ThreadPool shared_pool{};
-    return shared_pool;
-}
-
 
 #endif //MRONEILLSCUBES_THREADPOOL_H
