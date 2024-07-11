@@ -3,7 +3,6 @@
 //
 
 #include "server.h"
-#include <memory>
 
 Server& Server::run(u_int32_t port) {
 //    auto space = std::shared_ptr<Space>(new Space());

@@ -9,7 +9,7 @@
 #include <memory>
 #include "boost/url.hpp"
 #include "GLFW/glfw3.h"
-#include "engine/engine.h"
+#include "engine/Engine.h"
 
 // requirements
 // client needs to send events via network call
@@ -45,11 +45,16 @@ class Client{
     private:
 
         Client();
+
+
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
         ClientConfig m_clientConfig;
         Engine m_engine;
+
+        // the perspective that the client is currently bound to.
+        u_int32_t m_entityId;
 
 };
 

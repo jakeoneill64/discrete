@@ -10,11 +10,12 @@
 #define DISCRETE_VOXEL_H
 
 struct Voxel{
-    discrete::vec3 position;
-    discrete::vec3 velocity;
+    vec3 position;
+    vec3 velocity;
     fixed32_mid diameter;
     fixed32_high frictionCoefficient;
     fixed32_high density;
+    fixed32_high restitutionCoefficient;
 };
 
 template<>

@@ -4,16 +4,15 @@
 #include "fixed_point.h"
 #include "boost/functional/hash.hpp"
 
-namespace discrete {
-
-    struct vec3 {
-        fixed64_mid i, j, k;
-    };
+// template this maybe? don't really like that it is conflicted with glm.
+struct vec3 {
+    fixed64_mid i, j, k;
 };
 
+
 template<>
-struct std::hash<discrete::vec3>{
-    size_t operator()(const discrete::vec3& vector){
+struct std::hash<vec3>{
+    size_t operator()(const vec3& vector){
         size_t result{0};
         static std::hash<fixed64_mid> fixed_hasher;
         boost::hash_combine(result, fixed_hasher(vector.i));

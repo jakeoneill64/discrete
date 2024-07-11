@@ -1,13 +1,14 @@
 #include "client.h"
-#include "GLFW/glfw3.h"
 #include "glad/glad.h"
+#include "GLFW/glfw3.h"
 #include <memory>
 #include "input/input.h"
 
 Client::Client()
 :
     m_shouldRun{true},
-    m_clientConfig{}
+    m_clientConfig{},
+    m_entityId{0}
 {
 
     if(!glfwInit()){
@@ -50,6 +51,23 @@ Client::Client()
     glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
         Client::instance().m_engine.publishEvent<MouseEvent>({xPos, yPos});
     });
+
+    // initialise engine
+
+    m_engine.subscribeEvent<KeyEvent>([this](KeyEvent event){
+        if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){
+            try {
+                char character = GLFW_KEY_MAPPINGS.at(event.key);
+
+            }catch(const std::logic_error& _) {
+
+            }
+            //use a static lookup table to find the single char corresponding to
+            //the glfw char such as GLFW_KEY_O the use the engine action lookup table
+            //to perform the action.
+        }
+    });
+
 
 }
 
