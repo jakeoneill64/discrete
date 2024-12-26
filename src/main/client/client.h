@@ -7,7 +7,6 @@
 
 #include <atomic>
 #include <memory>
-#include "boost/url.hpp"
 #include "GLFW/glfw3.h"
 #include "engine/Engine.h"
 
@@ -15,7 +14,6 @@
 // client needs to send events via network call
 // if the client is being run locally, the server and client will share a copy of the world,
 // otherwise
-
 struct ClientConfig{
     int GL_VERSION_MAJOR;
     int GL_VERSION_MINOR;
@@ -26,7 +24,7 @@ struct ClientConfig{
 
 struct DestroyGLFWWindow{
 
-    void operator()(GLFWwindow* ptr);
+    void operator()(GLFWwindow* ptr) const;
 
 };
 
@@ -41,20 +39,16 @@ class Client{
             static Client singleton{};
             return singleton;
         }
-        void updateConfiguration(ClientConfig configuration);
+
     private:
 
         Client();
-
 
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
         ClientConfig m_clientConfig;
         Engine m_engine;
-
-        // the perspective that the client is currently bound to.
-        u_int32_t m_entityId;
 
 };
 

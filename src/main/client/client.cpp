@@ -3,13 +3,17 @@
 #include "GLFW/glfw3.h"
 #include <memory>
 #include "input/input.h"
+#include "yaml-cpp/yaml.h"
+#include "default-client-config.dat"
+
 
 Client::Client()
 :
     m_shouldRun{true},
-    m_clientConfig{},
-    m_entityId{0}
+    m_clientConfig{}
 {
+
+    YAML::Node node = YAML::Load(default_client_config);
 
     if(!glfwInit()){
         // TODO handle.
@@ -45,11 +49,11 @@ Client::Client()
      *  set the GLFW_LOCK_KEY_MODS input mode. glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
      */
     glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        Client::instance().m_engine.publishEvent<KeyEvent>({key, scancode, action, mods});
+        instance().m_engine.publishEvent<KeyEvent>({key, scancode, action, mods});
     });
 
     glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
-        Client::instance().m_engine.publishEvent<MouseEvent>({xPos, yPos});
+        instance().m_engine.publishEvent<MouseEvent>({xPos, yPos});
     });
 
     // initialise engine
@@ -62,21 +66,13 @@ Client::Client()
             }catch(const std::logic_error& _) {
 
             }
-            //use a static lookup table to find the single char corresponding to
-            //the glfw char such as GLFW_KEY_O the use the engine action lookup table
-            //to perform the action.
         }
     });
 
 
 }
 
-
-void Client::updateConfiguration(ClientConfig configuration) {
-
-}
-
-void DestroyGLFWWindow::operator()(GLFWwindow *ptr) {
+void DestroyGLFWWindow::operator()(GLFWwindow *ptr) const {
 
     glfwDestroyWindow(ptr);
 

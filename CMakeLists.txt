@@ -16,20 +16,20 @@ endif()
 
 link_libraries(libglad.a libglfw3.a libspdlog.a)
 
-file(GLOB_RECURSE RESOURCE "resources/*")
+file(GLOB_RECURSE RESOURCES "resources/*")
 
 set(DATA_FILES)
-foreach(RESOURCE_FILE ${RESOURCE})
+foreach(RESOURCE_FILE ${RESOURCES})
     get_filename_component(RESOURCE_FILE_NAME ${RESOURCE_FILE} NAME_WE)
     set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${RESOURCE_FILE_NAME}.dat)
     list(APPEND DATA_FILES ${DATA_FILE})
-    get_filename_component(VARIABLE_NAME ${RESOURCE_FILE} NAME_WE)
+    get_filename_component(RESOURCE_FILENAME_COMPONENT ${RESOURCE_FILE} NAME_WE)
     add_custom_command(
         OUTPUT ${DATA_FILE}
-        COMMAND xxd -n ${VARIABLE_NAME} -i ${RESOURCE_FILE} ${DATA_FILE}
+        COMMAND xxd -n ${RESOURCE_FILENAME_COMPONENT} -i ${RESOURCE_FILE} ${DATA_FILE}
     )
-    get_filename_component(Boobies ${RESOURCE_FILE} NAME_WE)
 endforeach()
+
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
