@@ -14,19 +14,18 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_libraries(${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
 endif()
 
-link_libraries(libglad.a libglfw3.a libspdlog.a)
+link_libraries(libglad.a libglfw3.a libspdlog.a libyaml-cpp.a)
 
 file(GLOB_RECURSE RESOURCES "resources/*")
 
 set(DATA_FILES)
 foreach(RESOURCE_FILE ${RESOURCES})
-    get_filename_component(RESOURCE_FILE_NAME ${RESOURCE_FILE} NAME_WE)
-    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${RESOURCE_FILE_NAME}.dat)
+    get_filename_component(RESOURCE_FILENAME ${RESOURCE_FILE} NAME_WE)
+    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${RESOURCE_FILENAME}.h)
     list(APPEND DATA_FILES ${DATA_FILE})
-    get_filename_component(RESOURCE_FILENAME_COMPONENT ${RESOURCE_FILE} NAME_WE)
     add_custom_command(
         OUTPUT ${DATA_FILE}
-        COMMAND xxd -n ${RESOURCE_FILENAME_COMPONENT} -i ${RESOURCE_FILE} ${DATA_FILE}
+        COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${RESOURCE_FILE} ${DATA_FILE}
     )
 endforeach()
 

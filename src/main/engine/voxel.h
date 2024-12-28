@@ -23,7 +23,7 @@ struct std::hash<Voxel> {
 
     size_t operator()(const Voxel &voxel) const {
         size_t result{0};
-        static std::hash<discrete::vec3> vector_hasher;
+        static std::hash<vec3> vector_hasher;
         static std::hash<fixed32_mid> fixed_point_hasher;
         boost::hash_combine(result, fixed_point_hasher(voxel.diameter));
         boost::hash_combine(result, vector_hasher(voxel.position));

@@ -1,7 +1,3 @@
-//
-// Created by Jake M O'Neill on 11/09/2022.
-//
-
 #ifndef DISCRETE_CLIENT_H
 #define DISCRETE_CLIENT_H
 

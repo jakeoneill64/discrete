@@ -1,0 +1,14 @@
+#!/bin/bash
+
+RESOURCE_FILE_PATH=$1
+HEADER_FILE_PATH=$2
+RESOURCE_FILENAME_COMPONENT=$(basename "$RESOURCE_FILE_PATH" .yml)
+HEADER_FILE=$(basename "$HEADER_FILE_PATH")
+MACRO_DEFINITION=$(echo "${HEADER_FILE//[.-]/_}" | tr 'a-z' 'A-Z')
+
+{
+  echo "#ifndef $MACRO_DEFINITION";
+  echo "#define $MACRO_DEFINITION";
+  xxd -n "$RESOURCE_FILENAME_COMPONENT" -i "$RESOURCE_FILE_PATH";
+  echo "#endif // $MACRO_DEFINITION"
+} > "$HEADER_FILE_PATH"
