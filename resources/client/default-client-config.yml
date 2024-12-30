@@ -1,14 +1,5 @@
-graphics:
-  gl-version-major: 3
-  gl-version-minor: 3
-  window-start-height: 800
-  window-start-width: 1200
-  window-title: Discrete voxel engine
-
-input:
-  key-mappings:
-    entity:
-      w: ENTITY_FORWARD
-      a: ENTITY_LEFT
-      s: ENTITY_BACK
-      d: ENTITY_RIGHT
+gl-version-major: 3
+gl-version-minor: 3
+window-start-height: 800
+window-start-width: 1200
+window-title: Discrete voxel engine

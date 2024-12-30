@@ -13,10 +13,13 @@
 class Engine : public EventManager{
 
 public:
-    void moveEntity(const int& entityId, const vec3& displacement);
+
+    // Client / Server           Engine
+    // (NETWORK)             <-> (SYNC, EVENTS)                    Audio
+    // (CONTEXT, GLFW EVENT)  -> (ACTION / STATEMACHINE, WORLD) -> Render Pipeline
+
 private:
 
-    //TODO TBD datastructure determination.
     World m_world;
     std::vector<Entity> m_entities;
 

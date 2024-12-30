@@ -1,0 +1,8 @@
+input:
+  key-mappings:
+    menu:
+    entity:
+      w: ENTITY_FORWARD
+      a: ENTITY_LEFT
+      s: ENTITY_BACK
+      d: ENTITY_RIGHT

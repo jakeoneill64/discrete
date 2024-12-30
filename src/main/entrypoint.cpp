@@ -1,6 +1,6 @@
 
 #include "server/server.h"
-#include "client/client.h"
+#include "client/Client.h"
 #include <future>
 
 int main(){

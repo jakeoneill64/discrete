@@ -11,8 +11,6 @@
 
 std::expected<std::shared_ptr<World>, std::runtime_error> load_world(const std::filesystem::path& path){
 
-
-    // TODO let's extract this out the next time we need something similar.
     std::ifstream inFile{path, std::ios::binary};
     if (!inFile.is_open())
         return std::unexpected(std::runtime_error("could not read world file data" + path.string()));

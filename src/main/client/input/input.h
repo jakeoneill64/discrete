@@ -11,14 +11,20 @@ const std::unordered_map<int, char> GLFW_KEY_MAPPINGS{
     {GLFW_KEY_D, 'd'},
 };
 
-struct KeyEvent{
+struct KeyEvent {
     int key;
     int scancode;
     int action;
     int mods;
 };
 
-struct MouseEvent{
+struct MouseButtonEvent {
+    int button;
+    int action;
+    int mods;
+};
+
+struct MousePositionEvent {
     double xPos;
     double yPos;
 };
