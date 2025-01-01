@@ -58,7 +58,7 @@ Client::Client()
         instance().m_engine.publishEvent<MouseButtonEvent>({button, action, mods});
     });
 
-    m_engine.subscribeEvent<KeyEvent>([this](KeyEvent event){
+    m_engine.subscribeEvent<KeyEvent>([](KeyEvent event){
 
 
         if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){

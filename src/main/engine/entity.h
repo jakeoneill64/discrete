@@ -1,16 +1,15 @@
-//
-// Created by Jake M O'Neill on 01/10/2022.
-//
+#include "Action.h"
+#include "util/vector.h"
 
-#ifndef MRONEILLSCUBES_ENTITY_H
-#define MRONEILLSCUBES_ENTITY_H
+#include <cinttypes>
 
-#include <glm/glm.hpp>
-#include <mutex>
+class EntityMoveAction: public Action{
+    explicit EntityMoveAction(const vec3& direction);
+    void operator()() const override;
+};
 
 class Entity{
 public:
     const u_int32_t id;
 };
 
-#endif //MRONEILLSCUBES_ENTITY_H

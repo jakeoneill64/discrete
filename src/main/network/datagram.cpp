@@ -1,7 +1,3 @@
-//
-// Created by Jake M O'Neill on 26/01/2024.
-//
-
 #include <sys/socket.h>
 #include "datagram.h"
 #include <unistd.h>

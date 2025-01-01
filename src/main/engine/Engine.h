@@ -4,26 +4,33 @@
 #include "event/EventManager.h"
 #include "world.h"
 #include "entity.h"
-#include <vector>
 #include "util/vector.h"
+#include "Action.h"
 
-// encapsulates space / world info
-// handles events
-// steps physics / game logic.
-class Engine : public EventManager{
+#include <unordered_map>
+
+// encapsulates spacial / world data
+class Engine{
 
 public:
 
     // Client / Server           Engine
     // (NETWORK)             <-> (SYNC, EVENTS)                    Audio
     // (CONTEXT, GLFW EVENT)  -> (ACTION / STATEMACHINE, WORLD) -> Render Pipeline
+    
 
 private:
 
+    // load statemachines and index.
+//    std::unordered_map<std::string, StateMachine> stateMachinesByName;
     World m_world;
-    std::vector<Entity> m_entities;
 
 };
 
 
 #endif //DISCRETE_ENGINE_H
+
+
+// EVENT           -> Statemachine, Runtime Polymorphism {Actions, Game Logic is here} ->
+// mousePosEvent   -> entityCamPosStatemachine { entityCamPosStateMachine (update entity in world } ->
+// frameStartEvent ->

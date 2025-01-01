@@ -21,7 +21,7 @@ struct DestroyGLFWWindow{
 //client -> window, render, audio, networking, input
 //engine -> physics & logic, configurable as a game
 //server -> networking, sync
-class Client{
+class Client : public EventManager{
     public:
 
 
