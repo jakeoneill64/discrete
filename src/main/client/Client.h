@@ -5,7 +5,6 @@
 #include <memory>
 #include "GLFW/glfw3.h"
 #include "engine/Engine.h"
-#include "client/ClientConfig.h"
 
 // requirements
 // client needs to send events via network call
@@ -38,7 +37,6 @@ class Client : public EventManager{
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
-        ClientConfig m_clientConfig{};
         Engine m_engine;
 
 };

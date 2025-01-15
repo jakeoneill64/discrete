@@ -8,6 +8,7 @@
 #include "Action.h"
 
 #include <unordered_map>
+#include <string>
 
 // encapsulates spacial / world data
 class Engine{
@@ -17,13 +18,13 @@ public:
     // Client / Server           Engine
     // (NETWORK)             <-> (SYNC, EVENTS)                    Audio
     // (CONTEXT, GLFW EVENT)  -> (ACTION / STATEMACHINE, WORLD) -> Render Pipeline
-    
+
+    void operator()(const std::string& stateMachine, const Action& initialState);
 
 private:
 
-    // load statemachines and index.
-//    std::unordered_map<std::string, StateMachine> stateMachinesByName;
     World m_world;
+    std::unordered_map<std::string, Action> actionsByName;
 
 };
 

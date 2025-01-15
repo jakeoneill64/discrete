@@ -18,10 +18,3 @@
 //    m_position += movement;
 //}
 
-EntityMoveState::EntityMoveState(const vec3 &direction) {
-
-}
-
-void EntityMoveState::operator()() const {
-
-}

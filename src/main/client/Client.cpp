@@ -47,27 +47,20 @@ Client::Client()
 
     // https://www.glfw.org/docs/3.3/input_guide.html
     glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        instance().m_engine.publishEvent<KeyEvent>({key, scancode, action, mods});
+        instance().publishEvent<KeyEvent>({key, scancode, action, mods});
     });
 
     glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
-        instance().m_engine.publishEvent<MousePositionEvent>({xPos, yPos});
+        instance().publishEvent<MousePositionEvent>({xPos, yPos});
     });
 
     glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods){
-        instance().m_engine.publishEvent<MouseButtonEvent>({button, action, mods});
+        instance().publishEvent<MouseButtonEvent>({button, action, mods});
     });
 
-    m_engine.subscribeEvent<KeyEvent>([](KeyEvent event){
-
-
+    subscribeEvent<KeyEvent>([](KeyEvent event){
         if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){
-            try {
-                char character = GLFW_KEY_MAPPINGS.at(event.key);
-
-            }catch(const std::logic_error& _) {
-
-            }
+             char character{GLFW_KEY_MAPPINGS.at(event.key)};
         }
     });
 

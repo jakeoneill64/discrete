@@ -9,7 +9,7 @@
 
 struct World{
     std::vector<Voxel> voxels;
-    std::vector<Entity> m_entities;
+//    std::vector<Entity> m_entities;
 };
 
 std::expected<std::shared_ptr<World>, std::runtime_error> load_world(const std::filesystem::path& path);

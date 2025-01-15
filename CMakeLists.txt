@@ -20,12 +20,17 @@ file(GLOB_RECURSE RESOURCES "resources/*")
 
 set(DATA_FILES)
 foreach(RESOURCE_FILE ${RESOURCES})
-    get_filename_component(RESOURCE_FILENAME ${RESOURCE_FILE} NAME_WE)
-    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${RESOURCE_FILENAME}.h)
+    get_filename_component(ORIGINAL_FILENAME ${RESOURCE_FILE} NAME)
+    get_filename_component(FILENAME_COMPONENT ${RESOURCE_FILE} NAME_WE)
+    # don't want hidden files like mac .DS_Store !!
+    if(${ORIGINAL_FILENAME} MATCHES "^\\.")
+        continue()
+    endif()
+    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${FILENAME_COMPONENT}.h)
     list(APPEND DATA_FILES ${DATA_FILE})
     add_custom_command(
         OUTPUT ${DATA_FILE}
-        COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${RESOURCE_FILE} ${DATA_FILE}
+        COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${FILENAME_COMPONENT} ${DATA_FILE}
     )
 endforeach()
 
