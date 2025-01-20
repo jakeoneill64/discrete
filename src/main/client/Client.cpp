@@ -7,12 +7,8 @@
 
 Client::Client()
 :
-    m_shouldRun{true},
-    m_clientConfig{}
+    m_shouldRun{true}
 {
-
-//    YAML::Node node = YAML::Load(std::string{reinterpret_cast<char*>(default_client_config), default_client_config_len});
-//    auto x = node["graphics"].as<ClientConfig>();
 
     if(!glfwInit()){
         // TODO handle.
@@ -47,10 +43,12 @@ Client::Client()
 
     // https://www.glfw.org/docs/3.3/input_guide.html
     glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        instance().publishEvent<KeyEvent>({key, scancode, action, mods});
+        instance().publishEvent<KeyEvent>({key, action});
     });
 
     glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
+        //TODO how does this tranlate to an action. Not trying to couple this tightly
+        // MousePositionEvent -> lookup action -> action(mouseEvent)
         instance().publishEvent<MousePositionEvent>({xPos, yPos});
     });
 

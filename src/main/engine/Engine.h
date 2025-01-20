@@ -19,12 +19,13 @@ public:
     // (NETWORK)             <-> (SYNC, EVENTS)                    Audio
     // (CONTEXT, GLFW EVENT)  -> (ACTION / STATEMACHINE, WORLD) -> Render Pipeline
 
-    void operator()(const std::string& stateMachine, const Action& initialState);
+//    void operator()(const std::string& stateMachine, const Action& initialState);
 
 private:
 
     World m_world;
-    std::unordered_map<std::string, Action> actionsByName;
+//    std::unordered_map<std::string, Action> actionsByName;
+    std::string getInputContext(uint32_t entityId);
 
 };
 

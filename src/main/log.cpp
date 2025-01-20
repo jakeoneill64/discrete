@@ -8,7 +8,6 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <vector>
 #include <memory>
-#include "constants.h"
 
 void log(Logger logger, const std::string &message, spdlog::level::level_enum log_level){
 

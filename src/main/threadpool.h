@@ -1,9 +1,5 @@
-//
-// Created by Jake M O'Neill on 25/09/2022.
-//
-
-#ifndef MRONEILLSCUBES_THREADPOOL_H
-#define MRONEILLSCUBES_THREADPOOL_H
+#ifndef DISCRETE_THREADPOOL_H
+#define DISCRETE_THREADPOOL_H
 
 #include <mutex>
 #include <thread>

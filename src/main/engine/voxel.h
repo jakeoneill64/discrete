@@ -1,13 +1,10 @@
-//
-// Created by Jake M O'Neill on 05/11/2023.
-//
+#ifndef DISCRETE_VOXEL_H
+#define DISCRETE_VOXEL_H
 
 #include "glm/vec3.hpp"
 #include <boost/functional/hash.hpp>
 #include "util/vector.h"
-
-#ifndef DISCRETE_VOXEL_H
-#define DISCRETE_VOXEL_H
+#include "util/fixed_point.h"
 
 struct Voxel{
     vec3 position;

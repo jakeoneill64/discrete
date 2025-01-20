@@ -5,6 +5,7 @@
 #include <memory>
 #include "GLFW/glfw3.h"
 #include "engine/Engine.h"
+#include "./input/input.h"
 
 // requirements
 // client needs to send events via network call
@@ -37,6 +38,8 @@ class Client : public EventManager{
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
+        uint32_t m_boundEntityId;
+//        std::unordered_map<std::string, Action<ButtonEvent>> m_inputMappings;
         Engine m_engine;
 
 };

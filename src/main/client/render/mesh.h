@@ -1,9 +1,5 @@
-//
-// Created by Jake M O'Neill on 14/09/2022.
-//
-
-#ifndef MRONEILLSCUBES_MESH_H
-#define MRONEILLSCUBES_MESH_H
+#ifndef DISCRETE_MESH_H
+#define DISCRETE_MESH_H
 
 #include <vector>
 #include <glm/glm.hpp>

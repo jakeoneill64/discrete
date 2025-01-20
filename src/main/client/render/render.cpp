@@ -1,9 +1,4 @@
-//
-// Created by Jake M O'Neill on 07/08/2022.
-//
-
 #include "glad/glad.h"
-#include "constants.h"
 #include "render.h"
 #include "mesh.h"
 #include "spdlog/spdlog.h"

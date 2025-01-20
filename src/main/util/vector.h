@@ -9,6 +9,9 @@ struct vec3 {
     fixed64_mid i, j, k;
 };
 
+struct vec2 {
+    fixed64_mid i, j;
+};
 
 template<>
 struct std::hash<vec3>{
