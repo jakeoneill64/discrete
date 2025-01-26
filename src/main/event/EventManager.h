@@ -17,7 +17,7 @@ class EventManager{
     public:
 
         template<typename EventType>
-        void publishEvent(const EventType& event) {
+        void publishEvent(const EventType& event){
             std::shared_lock lock{m_mutex};
             m_callbacksByEventType.contains(std::type_index(typeid(EventType)));
             for(const auto& [_, callback]: m_callbacksByEventType[std::type_index(typeid(EventType))]){
@@ -32,7 +32,8 @@ class EventManager{
          * @return unsubscribe function
          */
         template <typename EventType>
-        std::function<void()> subscribeEvent(std::function<void(const EventType&)> callback){
+        std::function<void()>
+        subscribeEvent(const std::function<void(const EventType&)>& callback){
 
             std::unique_lock lock{m_mutex};
 

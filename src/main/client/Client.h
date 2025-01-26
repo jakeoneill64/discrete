@@ -1,16 +1,13 @@
 #ifndef DISCRETE_CLIENT_H
 #define DISCRETE_CLIENT_H
 
-#include <atomic>
-#include <memory>
 #include "GLFW/glfw3.h"
 #include "engine/Engine.h"
 #include "./input/input.h"
-
-// requirements
-// client needs to send events via network call
-// if the client is being run locally, the server and client will share a copy of the world,
-// otherwise
+#include "persistence/sqlite3.h"
+#include "persistence/ConfigRepository.h"
+#include <atomic>
+#include <memory>
 
 struct DestroyGLFWWindow{
 
@@ -21,24 +18,25 @@ struct DestroyGLFWWindow{
 //client -> window, render, audio, networking, input
 //engine -> physics & logic, configurable as a game
 //server -> networking, sync
-class Client : public EventManager{
+class Client {
     public:
-
+        Client();
 
     private:
-
         // unfortunately this pattern (or similar workarounds) is necessary
         // for the glfw callbacks.
-        static Client& instance(){
+        static inline Client& instance(){
             static Client singleton{};
             return singleton;
         }
-        Client();
 
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
-        uint32_t m_boundEntityId;
+        uint32_t m_boundEntityId{};
+        std::shared_ptr<EventManager> m_eventManager;
+        std::shared_ptr<sqlite3> m_database;
+        ConfigRepository m_configRepository;
 //        std::unordered_map<std::string, Action<ButtonEvent>> m_inputMappings;
         Engine m_engine;
 
