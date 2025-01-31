@@ -6,6 +6,7 @@ import itertools
 if __name__ == '__main__':
     action_pattern = r'class\s+(\w+)\s*:\s?public\s+Action<>'
     paths_to_process = sys.argv[1:]
+    output_file = sys.argv[-1]
     header_files = list(itertools.chain.from_iterable(Path(path).rglob("*.h") for path in paths_to_process))
     parsed_declarations = []
     for header_file in header_files:
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     imports = '\n'.join([f'#include "{action_name}.h"' for action_name in parsed_declarations])
     factory_registrations = '\n'.join(action_registrations)
 
-    with open('src/main/engine/action/registration.h', 'w') as registration_file:
+    with open(output_file, 'w') as registration_file:
         registration_file.write(
 f"""#ifndef DISCRETE_ACTION_REGISTRATION_H
 #define DISCRETE_ACTION_REGISTRATION_H

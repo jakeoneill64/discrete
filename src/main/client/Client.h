@@ -6,6 +6,7 @@
 #include "./input/input.h"
 #include "persistence/sqlite3.h"
 #include "persistence/ConfigRepository.h"
+#include "input/InputRepository.h"
 #include "Factory.h"
 #include "engine/Action.h"
 #include <atomic>
@@ -39,7 +40,7 @@ class Client {
         std::shared_ptr<EventManager> m_eventManager;
         std::shared_ptr<sqlite3> m_database;
         ConfigRepository m_configRepository;
-
+        InputRepository m_inputRepository;
         Engine m_engine;
 
 };

@@ -16,12 +16,6 @@
 	ignore = all
 	branch = bf71a83 # tag: GLM 0.9.9.8
 
-[submodule "modules/boost"]
-	path = modules/boost
-	url = git@github.com:boostorg/boost.git
-	branch = ab7968a # tag: boost-1.85.0
-	ignore = all
-
 [submodule "modules/spdlog"]
 	path = modules/spdlog
 	url = git@github.com:gabime/spdlog.git
@@ -32,10 +26,4 @@
 	path = modules/googletest
 	url = git@github.com:google/googletest.git
     branch = 1d17ea141d2c11b8917d2c7d029f1c4e2b9769b2
-    ignore = all
-
-[submodule "modules/yaml-cpp"]
-	path = modules/yaml-cpp
-	url = git@github.com:jbeder/yaml-cpp.git
-	branch = f7320141120f720aecc4c32be25586e7da9eb978
     ignore = all

@@ -40,6 +40,7 @@ friend struct std::hash<fixed<size, scaling_factor_inverse>>;
 
 public:
 
+    //NOLINTBEGIN
     template <
             typename Number,
             typename std::enable_if_t<std::is_arithmetic_v<Number> , int> = 0>
@@ -65,6 +66,7 @@ public:
         ;
     }
 
+    // NOLINTEND
 
     template <typename Number,typename = std::enable_if_t<std::is_arithmetic_v<Number> > >
     fixed<size, scaling_factor_inverse> operator+(Number operand) const

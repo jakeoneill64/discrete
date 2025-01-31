@@ -4,13 +4,16 @@
 #include "input/input.h"
 #include "persistence/database.h"
 #include "persistence/sqlite3.h"
+#include "engine/action/EntityLook.h"
 #include <string>
+#include <memory>
 
 Client::Client()
 :
     m_shouldRun{true},
     m_eventManager{},
-    m_configRepository{m_eventManager, m_database}
+    m_configRepository{m_eventManager, m_database},
+    m_inputRepository(m_eventManager, m_database)
 {
 
     auto dbPointer = m_database.get();
@@ -75,8 +78,6 @@ Client::Client()
         //TODO handle.
     }
 
-
-
     // --- initialise engine ---
 
     // https://www.glfw.org/docs/3.3/input_guide.html
@@ -92,12 +93,34 @@ Client::Client()
         instance().m_eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
     });
 
-//    m_eventManager->subscribeEvent<KeyEvent>([](KeyEvent event){
-//        if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){
-//             char character{GLFW_KEY_MAPPINGS.at(event.key)};
-//        }
-//    });
+    m_eventManager->subscribeEvent<KeyEvent>(
+        [&](KeyEvent event){
+        if(event.action != GLFW_REPEAT && event.action != GLFW_PRESS)
+            return;
+        m_engine.submit<void>(
+            m_inputRepository[GLFW_KEY_MAPPINGS.at(event.key),
+            m_engine.getInputContext(m_boundEntityId)]
+        );
+    });
 
+    m_eventManager->subscribeEvent<MouseButtonEvent>(
+        [&](KeyEvent event) {
+            if (event.action != GLFW_REPEAT && event.action != GLFW_PRESS)
+                return;
+            m_engine.submit<void>(
+                    m_inputRepository[GLFW_MOUSE_BUTTON_MAPPINGS.at(event.key),
+                            m_engine.getInputContext(m_boundEntityId)]
+            );
+        }
+    );
+
+    m_eventManager->subscribeEvent<MousePositionEvent>(
+        [&](MousePositionEvent event) {
+            m_engine.submit<EntityLookParam>(
+                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
+            );
+        }
+    );
 
 }
 

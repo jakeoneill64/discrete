@@ -70,6 +70,36 @@ std::optional<std::tuple<TupleTypes...>> getRecord(
     return result;
 }
 
+template<typename ...TupleTypes>
+std::optional<std::vector<std::tuple<TupleTypes...>>> executeQuery(
+    sqlite3* database,
+    const std::string& queryStatement
+){
+    sqlite3_stmt* statement;
+
+    sqlite3_prepare_v2(database, queryStatement.c_str(), -1, &statement, nullptr);
+
+
+    if (sqlite3_step(statement) != SQLITE_ROW) {
+        sqlite3_finalize(statement);
+        return {};
+    }
+
+    std::vector<std::tuple<TupleTypes...>> results;
+
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        try {
+            results.emplace_back(extractRow<TupleTypes...>(statement));
+        } catch (const std::exception& e) {
+            sqlite3_finalize(statement);
+            throw std::runtime_error("Error extracting row: " + std::string(e.what()));
+        }
+    }
+
+    sqlite3_finalize(statement);
+    return results;
+}
+
 template<sqlite_type ...TupleTypes>
 std::vector<std::tuple<TupleTypes...>> getAllRecords(
     sqlite3* database,

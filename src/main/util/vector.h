@@ -2,7 +2,6 @@
 #define DISCRETE_VECTOR_H
 
 #include "fixed_point.h"
-#include "boost/functional/hash.hpp"
 
 // template this maybe? don't really like that it is conflicted with glm.
 struct vec3 {

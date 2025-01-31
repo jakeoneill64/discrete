@@ -14,7 +14,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_libraries(${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
 endif()
 
-link_libraries(libglad.a libglfw3.a libspdlog.a libyaml-cpp.a)
+link_libraries(libglad.a libglfw3.a libspdlog.a)
 
 file(GLOB_RECURSE RESOURCES "resources/*")
 
@@ -34,6 +34,10 @@ foreach(RESOURCE_FILE ${RESOURCES})
     )
 endforeach()
 
+execute_process(
+        COMMAND /usr/local/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripting/build_actions.py ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
+        OUTPUT_VARIABLE LINK_DEPS
+)
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
@@ -45,6 +49,7 @@ add_executable(discrete ${SOURCE})
 
 add_custom_target(GenerateResources ALL DEPENDS ${DATA_FILES})
 add_dependencies(discrete GenerateResources)
+
 
 # Create a separate test executable for each test source
 foreach(TEST_FILE ${TEST})

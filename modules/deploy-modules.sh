@@ -32,19 +32,6 @@ buildGlad(){
   )
 }
 
-buildYamlCpp(){
-  (
-    cd yaml-cpp
-    cmake .
-    make
-
-    mv libyaml-cpp.a ../../lib
-    mv include/yaml-cpp/ ../../include/
-    git clean -df
-    git reset HEAD --hard
-  )
-}
-
 buildGlfw(){
   (
     cd glfw
@@ -54,26 +41,6 @@ buildGlfw(){
     mv include/GLFW/ ../../include
     git clean -df
     git reset HEAD --hard
-  )
-
-}
-
-buildBoost(){
-
-  (
-    cd boost/
-    git submodule update --init
-    ./bootstrap.sh
-    ./b2
-
-    [[ "$OSTYPE" == "darwin"* ]] && mv stage/lib/*.dylib ../../lib || mv stage/lib/*.a ../../lib
-
-
-    cp -RL boost ../../include/boost/
-
-    git clean -df
-    git reset HEAD --hard
-
   )
 
 }
@@ -149,6 +116,4 @@ buildGlad
 buildGlfw
 buildGlm
 buildSpdlog
-buildBoost
 buildGoogleTest
-buildYamlCpp

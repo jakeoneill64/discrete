@@ -10,22 +10,18 @@
 #include <unordered_map>
 #include <string>
 
-// encapsulates spacial / world data
 class Engine{
 
 public:
 
-    // Client / Server           Engine
-    // (NETWORK)             <-> (SYNC, EVENTS)                    Audio
-    // (CONTEXT, GLFW EVENT)  -> (ACTION / STATEMACHINE, WORLD) -> Render Pipeline
+    template <typename ActionType>
+    void submit(std::unique_ptr<Action<ActionType>> action);
 
-//    void operator()(const std::string& stateMachine, const Action& initialState);
+    std::string getInputContext(uint32_t entityId);
 
 private:
 
-    World m_world;
-//    std::unordered_map<std::string, Action> actionsByName;
-    std::string getInputContext(uint32_t entityId);
+    std::shared_ptr<World> m_world;
 
 };
 
