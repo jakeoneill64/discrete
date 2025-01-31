@@ -14,6 +14,9 @@ using supported_sqlite_types = type_list<sqlite3_int64, double, std::string>;
 template<typename Type>
 concept sqlite_type = contains_type<supported_sqlite_types, Type>::value;
 
+
+//TODO I want a way to place types / tuples into the db, implemented here.
+//TODO let's remove boost. Standard lib is sufficient for this project.
 template<sqlite_type ...TupleTypes>
 std::optional<std::tuple<TupleTypes...>> getRecord(
     sqlite3* database,

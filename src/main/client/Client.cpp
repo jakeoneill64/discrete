@@ -28,7 +28,7 @@ Client::Client()
 
     glfwWindowHint(
         GLFW_CONTEXT_VERSION_MAJOR,
-        m_configRepository[""].transform(
+        m_configRepository["client.render.gl_version_major"].transform(
             [](const auto version){
                 return std::stoi(version);
             }
@@ -37,7 +37,7 @@ Client::Client()
 
     glfwWindowHint(
         GLFW_CONTEXT_VERSION_MINOR,
-        m_configRepository[""].transform(
+        m_configRepository["client.render.gl_version_minor"].transform(
             [](const auto version){
                 return std::stoi(version);
             }
@@ -51,17 +51,17 @@ Client::Client()
 
     m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>(
             glfwCreateWindow(
-            m_configRepository[""].transform(
+            m_configRepository["client.window.initial_width"].transform(
                 [](const auto version){
                     return std::stoi(version);
                 }
             ).value_or(6),
-            m_configRepository[""].transform(
+            m_configRepository["client.window.initial_height"].transform(
                 [](const auto version){
                     return std::stoi(version);
                 }
             ).value_or(6),
-            "Discrete Engine",
+            m_configRepository["client.window.name"].value_or("Discrete Engine").c_str(),
             nullptr,
             nullptr)
     );
@@ -92,11 +92,11 @@ Client::Client()
         instance().m_eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
     });
 
-    m_eventManager->subscribeEvent<KeyEvent>([](KeyEvent event){
-        if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){
-             char character{GLFW_KEY_MAPPINGS.at(event.key)};
-        }
-    });
+//    m_eventManager->subscribeEvent<KeyEvent>([](KeyEvent event){
+//        if(event.action == GLFW_REPEAT || event.action == GLFW_PRESS){
+//             char character{GLFW_KEY_MAPPINGS.at(event.key)};
+//        }
+//    });
 
 
 }

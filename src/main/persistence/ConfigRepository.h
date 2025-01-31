@@ -18,7 +18,7 @@ public:
     ) noexcept;
     ~ConfigRepository();
     std::optional<std::string> operator[](const std::string &key);
-    void insert(const std::string& key, const std::string& value);
+    virtual void insert(const std::string& key, const std::string& value);
 private:
     std::shared_mutex m_mutex;
     std::shared_ptr<EventManager> m_eventManager;

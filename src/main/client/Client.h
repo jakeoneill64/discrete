@@ -6,6 +6,8 @@
 #include "./input/input.h"
 #include "persistence/sqlite3.h"
 #include "persistence/ConfigRepository.h"
+#include "Factory.h"
+#include "engine/Action.h"
 #include <atomic>
 #include <memory>
 
@@ -37,7 +39,7 @@ class Client {
         std::shared_ptr<EventManager> m_eventManager;
         std::shared_ptr<sqlite3> m_database;
         ConfigRepository m_configRepository;
-//        std::unordered_map<std::string, Action<ButtonEvent>> m_inputMappings;
+
         Engine m_engine;
 
 };

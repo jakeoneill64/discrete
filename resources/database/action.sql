@@ -1,7 +1,11 @@
 CREATE TABLE IF NOT EXISTS `action` (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action TEXT NOT NULL
+            name TEXT NOT NULL
 );
 
-INSERT INTO `action` (action) VALUES
-('EntityMove')
+INSERT INTO `action` (name) VALUES
+('EntityMoveForward'),
+('EntityMoveBackward'),
+('EntityMoveLeft'),
+('EntityMoveRight'),
+('EntityLook')
