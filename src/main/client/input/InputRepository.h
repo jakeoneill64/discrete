@@ -36,6 +36,7 @@ public:
     InputRepository(std::shared_ptr<EventManager> eventManager, std::shared_ptr<sqlite3> database);
     // NB an input 'key' may include something like MOUSE_CLICK_LEFT, KEY_F, KEY_ARROW_UP
     std::unique_ptr<Action<>> operator[](const std::string& inputKey, const std::string& context);
+    ~InputRepository();
 private:
 
     std::shared_ptr<EventManager> m_eventManager;

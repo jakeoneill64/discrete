@@ -38,9 +38,9 @@ InputRepository::InputRepository(
         }
     );
 
-    m_eventManager->subscribeEvent<ConfigUpdate>(
+    m_eventManager->subscribeEvent<InputUpdate>(
         [&]
-        (ConfigUpdate updateEvent){
+        (InputUpdate updateEvent){
             std::unique_lock<std::shared_mutex> writeLock{m_mutex};
             const auto& [operation, rowId] = updateEvent;
             switch (operation) {
@@ -87,4 +87,8 @@ InputRepository::InputRepository(
 
 std::unique_ptr<Action<>> InputRepository::operator[](const std::string &inputKey, const std::string &context) {
     return m_actionFactory.create(m_inputMappings[{inputKey, context}]);
+}
+
+InputRepository::~InputRepository(){
+ //TODO
 }

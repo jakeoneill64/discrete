@@ -31,6 +31,7 @@ std::expected<std::shared_ptr<World>, std::runtime_error> load_world(const std::
         };
         vector position;
         vector velocity;
+        vector rotation;
         float diameter;
         float frictionCoefficient;
         float density;

@@ -170,6 +170,7 @@ struct TableUpdate{
 };
 
 struct ConfigUpdate: TableUpdate{};
+struct InputUpdate: TableUpdate{};
 
 inline void dbEventCallback(
     void* data,
@@ -179,10 +180,19 @@ inline void dbEventCallback(
     sqlite3_int64 rowId
 ){
 
-    auto& eventManager{ *static_cast<EventManager*>(data)};
+    auto eventManager{ *static_cast<std::shared_ptr<EventManager>*>(data)};
+
     if(!strcmp(table, "config")) {
-        eventManager.publishEvent(
+        eventManager->publishEvent(
                 ConfigUpdate{
+                        operation, rowId
+                }
+        );
+    }
+
+    if(!strcmp(table, "input")) {
+        eventManager->publishEvent(
+                InputUpdate{
                         operation, rowId
                 }
         );

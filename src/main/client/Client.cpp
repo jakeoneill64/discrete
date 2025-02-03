@@ -6,7 +6,6 @@
 #include "persistence/sqlite3.h"
 #include "engine/action/EntityLook.h"
 #include <string>
-#include <memory>
 
 Client::Client()
 :
@@ -116,9 +115,10 @@ Client::Client()
 
     m_eventManager->subscribeEvent<MousePositionEvent>(
         [&](MousePositionEvent event) {
-            m_engine.submit<EntityLookParam>(
-                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
-            );
+        EntityLook{{m_boundEntityId, event.xPos, event.yPos}};
+//            m_engine.submit<EntityLookParam>(
+//                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
+//            );
         }
     );
 
