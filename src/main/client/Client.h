@@ -7,7 +7,7 @@
 #include "persistence/sqlite3.h"
 #include "persistence/ConfigRepository.h"
 #include "input/InputRepository.h"
-#include "Factory.h"
+#include "util/Factory.h"
 #include "engine/Action.h"
 #include <atomic>
 #include <memory>
@@ -22,6 +22,7 @@ struct DestroyGLFWWindow{
 //engine -> physics & logic, configurable as a game
 //server -> networking, sync
 class Client {
+
     public:
         Client();
 

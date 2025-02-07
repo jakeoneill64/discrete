@@ -4,12 +4,6 @@
 	branch = 7482de6 # tag: 3.3.8
 	ignore = all
 
-[submodule "modules/glad"]
-	path = modules/glad
-	url = git@github.com:Dav1dde/glad.git
-	branch = 1ecd4577 # tag: v0.1.36
-	ignore = all
-
 [submodule "modules/glm"]
 	path = modules/glm
 	url = git@github.com:g-truc/glm.git

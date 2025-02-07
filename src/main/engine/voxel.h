@@ -6,6 +6,8 @@
 #include "util/vector.h"
 #include "util/fixed_point.h"
 
+using namespace discrete;
+
 struct Voxel{
     vec3 position;
     vec3 velocity;

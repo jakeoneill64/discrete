@@ -18,20 +18,6 @@ buildGlm(){
   )
 }
 
-buildGlad(){
-  (
-    cd glad
-    cmake .
-    make
-
-    mv libglad.a ../../lib
-    mv include/glad/ ../../include/
-    mv include/KHR ../../include/
-    git clean -df
-    git reset HEAD --hard
-  )
-}
-
 buildGlfw(){
   (
     cd glfw
@@ -112,7 +98,6 @@ mkdir ../lib ../include
 #  _/___\_
 # [_______]
 
-buildGlad
 buildGlfw
 buildGlm
 buildSpdlog

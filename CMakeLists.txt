@@ -6,15 +6,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(lib)
 add_compile_definitions(DISCRETE_DEBUG)
 
+add_executable(discrete)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    find_library(VULKAN_LIB vulkan REQUIRED)
+    find_library(MOLTENVK_LIB MoltenVK REQUIRED)
     find_library(COCOA_LIB Cocoa REQUIRED)
-    find_library(OPEN_GL_LIB OpenGl REQUIRED)
     find_library(IOKIT_LIB IOKit REQUIRED)
     find_library(CORE_VIDEO_LIB CoreVideo REQUIRED)
-    link_libraries(${OPEN_GL_LIB} ${COCOA_LIB} ${IOKIT_LIB} ${CORE_VIDEO_LIB})
+    find_library(METAL_LIB Metal REQUIRED)
 endif()
 
-link_libraries(libglad.a libglfw3.a libspdlog.a)
+target_link_libraries(
+    discrete
+    ${VULKAN_LIB}
+    ${MOLTENVK_LIB}
+    ${COCOA_LIB}
+    ${IOKIT_LIB}
+    ${CORE_VIDEO_LIB}
+    ${METAL_LIB}
+    libglfw3.a
+    libspdlog.a
+)
 
 file(GLOB_RECURSE RESOURCES "resources/*")
 
@@ -45,7 +58,7 @@ file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
 
 
-add_executable(discrete ${SOURCE})
+target_sources(discrete PRIVATE ${SOURCE})
 
 add_custom_target(GenerateResources ALL DEPENDS ${DATA_FILES})
 add_dependencies(discrete GenerateResources)
