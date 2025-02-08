@@ -33,7 +33,7 @@ buildGlfw(){
 
 buildGoogleTest(){
   (
-    cd googletest/
+    cd googletest
     git submodule update --init
 
     cmake .
@@ -66,37 +66,18 @@ buildSpdlog(){
   )
 }
 
-CURRENT_DIR="$(cd "$(dirname  "$0")" >/dev/null; pwd -P)"
-
-if [[ $(pwd) != "$CURRENT_DIR" ]]; then
-  echo 'you must be in the modules directory to run this script.'
-  exit 1
-fi
+cd modules
 
 for d in *
 do
   [[ -d "${d}" ]] || continue
-  rm -rf $d
+  rm -rf "$d"
 done
 
 git submodule update --init
 
-# clean install
-rm -rf ../lib ../include
-mkdir ../lib ../include
-
-
-#         (
-#    (     )
-#    )    (
-#    (   _ )  ))
-# ,-----' |  ((
-# | //  : |   )
-# | //  : | )/
-# | //  : |
-# `-----._|
-#  _/___\_
-# [_______]
+rm -rf ../lib
+mkdir ../lib
 
 buildGlfw
 buildGlm
