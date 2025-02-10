@@ -67,7 +67,12 @@ execute_process(
 )
 
 execute_process(
-        COMMAND /usr/bin/bash ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
+        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
+)
+
+add_custom_target(deploy_modules
+    COMMAND scripting/deploy_modules.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 
@@ -79,7 +84,7 @@ target_sources(discrete PRIVATE ${SOURCE})
 
 add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES})
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
-add_dependencies(discrete generate_resources compile_shaders)
+add_dependencies(discrete generate_resources compile_shaders deploy_modules)
 
 
 foreach(TEST_FILE ${TEST})

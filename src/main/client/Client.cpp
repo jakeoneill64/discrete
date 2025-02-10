@@ -1,16 +1,18 @@
-#include "glad/glad.h"
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "Client.h"
 #include "input/input.h"
 #include "persistence/database.h"
 #include "persistence/sqlite3.h"
 #include "engine/action/EntityLook.h"
+#include "render/render.h"
 #include <string>
 
 Client::Client()
 :
     m_shouldRun{true},
     m_eventManager{},
+    m_database(),
     m_configRepository{m_eventManager, m_database},
     m_inputRepository(m_eventManager, m_database)
 {
@@ -25,31 +27,11 @@ Client::Client()
     );
 
     if(!glfwInit()){
-        // TODO handle.
+        throw std::runtime_error("GLFW failed to initialise");
     }
 
-    glfwWindowHint(
-        GLFW_CONTEXT_VERSION_MAJOR,
-        m_configRepository["client.render.gl_version_major"].transform(
-            [](const auto version){
-                return std::stoi(version);
-            }
-        ).value_or(4)
-    );
-
-    glfwWindowHint(
-        GLFW_CONTEXT_VERSION_MINOR,
-        m_configRepository["client.render.gl_version_minor"].transform(
-            [](const auto version){
-                return std::stoi(version);
-            }
-        ).value_or(6)
-    );
-
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    #endif
+    // Ensure GLFW does NOT create an OpenGL context
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>(
             glfwCreateWindow(
@@ -73,8 +55,34 @@ Client::Client()
         glViewport(0, 0, width, height);
     });
 
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        //TODO handle.
+    uint32_t glfwExtensionCount{0};
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char*> allInstanceExtensions{glfwExtensions, glfwExtensions + glfwExtensionCount};
+    allInstanceExtensions.insert(allInstanceExtensions.end(), INSTANCE_EXTENSION.begin(), INSTANCE_EXTENSION.end());
+
+    VkInstanceCreateInfo instanceCreateInfo = {
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, // VkStructureType sType;
+        nullptr,                                // const void* pNext;
+        0,                                      // VkInstanceCreateFlags flags;
+        nullptr,                                // const VkApplicationInfo* pApplicationInfo;
+#ifdef DISCRETE_DEBUG
+        static_cast<uint32_t>(VALIDATION_LAYERS.size()),
+        VALIDATION_LAYERS.data(),
+#else
+        0,                                      // uint32_t enabledLayerNameCount;
+        nullptr,                                // const char* const* ppEnabledLayerNames;
+#endif
+        2,                                      // uint32_t enabledExtensionNameCount;
+        allInstanceExtensions.data(),           // const char* const* ppEnabledExtensionNames;
+    };
+
+    if (vkCreateInstance(&instanceCreateInfo, nullptr, &m_vulkanInstance) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan instance!");
+    }
+
+    VkSurfaceKHR surface; // perhaps a member of client. I don't really want a bunch of low-level vulkan stuff in client.
+    if (glfwCreateWindowSurface(m_vulkanInstance, m_window.get(), nullptr, &surface) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan surface!");
     }
 
     // --- initialise engine ---
@@ -122,6 +130,12 @@ Client::Client()
         }
     );
 
+}
+
+void Client::loop() {
+    while(m_shouldRun){
+        m_eventManager->publishEvent(RenderStartEvent{});
+    }
 }
 
 void DestroyGLFWWindow::operator()(GLFWwindow *ptr) const {

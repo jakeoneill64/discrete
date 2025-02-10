@@ -1,5 +1,6 @@
 #ifndef DISCRETE_CLIENT_H
 #define DISCRETE_CLIENT_H
+#define GLFW_INCLUDE_VULKAN
 
 #include "GLFW/glfw3.h"
 #include "engine/Engine.h"
@@ -9,6 +10,8 @@
 #include "input/InputRepository.h"
 #include "util/Factory.h"
 #include "engine/Action.h"
+#include "vulkan/vulkan.h"
+
 #include <atomic>
 #include <memory>
 
@@ -34,6 +37,8 @@ class Client {
             return singleton;
         }
 
+        void loop();
+
         //pass a callback to things that need to set this.
         std::atomic_bool m_shouldRun;
         std::unique_ptr<GLFWwindow, DestroyGLFWWindow> m_window;
@@ -42,6 +47,8 @@ class Client {
         std::shared_ptr<sqlite3> m_database;
         ConfigRepository m_configRepository;
         InputRepository m_inputRepository;
+        VkInstance m_vulkanInstance;
+        VkDevice m_device;
         Engine m_engine;
 
 };

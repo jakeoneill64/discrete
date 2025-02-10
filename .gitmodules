@@ -1,7 +1,7 @@
 [submodule "modules/glfw"]
 	path = modules/glfw
 	url = git@github.com:glfw/glfw.git
-	branch = 7482de6 # tag: 3.3.8
+	branch = 7b6aead # tag: 3.4
 	ignore = all
 
 [submodule "modules/glm"]
