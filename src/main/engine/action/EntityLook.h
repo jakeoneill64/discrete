@@ -2,7 +2,6 @@
 #define DISCRETE_ENTITYLOOK_H
 
 #include "../Action.h"
-#include "util/vector.h"
 
 struct EntityLookParam {
     uint32_t entityId;

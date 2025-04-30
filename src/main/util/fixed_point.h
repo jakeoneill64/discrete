@@ -18,6 +18,11 @@ constexpr uint64_t power(uint64_t number, uint8_t index){
     return current;
 }
 
+// Floating point operations are not deterministic across platforms. Differences in compilers,
+// FPUs on different platforms and optimisation mean that physics calculations and networking (multiplayer)
+// will result in computational drift as well as some more obvious flaws in that velocities, positions ect will
+// not have minimum levels of precision.
+
 // implementation details: https://en.wikipedia.org/wiki/Fixed-point_arithmetic
 template <
         std::size_t size,

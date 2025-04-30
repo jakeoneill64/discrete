@@ -29,6 +29,11 @@ namespace {
     };
 }
 
+
+/***
+ *  Entities interact with the engine and world via actions. Some actions are stateless (default - Action<void>)
+ *  and some are created with state.
+ */
 template <typename T = void>
 using Action = typename ActionHelper<T>::Type;
 

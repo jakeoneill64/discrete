@@ -12,11 +12,14 @@
 using supported_sqlite_types = type_list<sqlite3_int64, double, std::string>;
 
 template<typename Type>
-concept sqlite_type = contains_type<supported_sqlite_types, Type>::value;
+concept sqlite_type =
+    contains_type<supported_sqlite_types, Type>::value ||
+    (
+        requires { typename Type::value_type; } && // does the type have a value_type (is it a std container?)
+        contains_type<supported_sqlite_types, typename Type::value_type>::value && // is the contained value a supported_sqlite_types
+        std::same_as<Type, std::optional<typename Type::value_type>> // is the container type an optional with a support value type?
+    );
 
-
-//TODO I want a way to place types / tuples into the db, implemented here.
-//TODO let's remove boost. Standard lib is sufficient for this project.
 template<sqlite_type ...TupleTypes>
 std::optional<std::tuple<TupleTypes...>> getRecord(
     sqlite3* database,
@@ -128,16 +131,19 @@ std::vector<std::tuple<TupleTypes...>> getAllRecords(
     return results;
 }
 
-template<sqlite_type... TupleTypes, std::size_t... Indices>
-static std::tuple<TupleTypes...> extractRow(sqlite3_stmt* preparedStatement, std::index_sequence<Indices...>) {
-    return {
-        (convertSQLiteColumn<TupleTypes>(preparedStatement, Indices))...
-    };
-}
-
 template<sqlite_type T>
-static T convertSQLiteColumn(sqlite3_stmt* preparedStatement, int index){
-    return sqlite3_column_text(preparedStatement, index);
+static T convertSQLiteColumn(sqlite3_stmt* preparedStatement, int index) = delete;
+
+// Handle optional columns by checking for a value and then calling the specialised template for the value type, if present
+template<sqlite_type T>
+requires std::same_as<T, std::optional<typename T::value_type>>
+static std::optional<typename T::value_type> convertSQLiteColumn(sqlite3_stmt* preparedStatement, int index){
+    int type = sqlite3_column_type(preparedStatement, index);
+    if (type != SQLITE_NULL)
+        return {
+            convertSQLiteColumn<typename T::value_type>(preparedStatement, index)
+        };
+    return std::nullopt;
 }
 
 template<>
@@ -153,6 +159,13 @@ double convertSQLiteColumn<double>(sqlite3_stmt* preparedStatement, int index) {
 template<>
 std::string convertSQLiteColumn<std::string>(sqlite3_stmt* preparedStatement, int index) {
     return reinterpret_cast<const char*>(sqlite3_column_text(preparedStatement, index));
+}
+
+template<sqlite_type... TupleTypes, std::size_t... Indices>
+static std::tuple<TupleTypes...> extractRow(sqlite3_stmt* preparedStatement, std::index_sequence<Indices...>) {
+    return {
+        (convertSQLiteColumn<TupleTypes>(preparedStatement, Indices))...
+    };
 }
 
 template<sqlite_type... TupleTypes>

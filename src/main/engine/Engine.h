@@ -4,11 +4,11 @@
 #include "event/EventManager.h"
 #include "world.h"
 #include "entity.h"
-#include "util/vector.h"
 #include "Action.h"
 
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 class Engine{
 
@@ -16,8 +16,8 @@ public:
 
     template <typename ActionType>
     void submit(std::unique_ptr<Action<ActionType>> action);
-
     std::string getInputContext(uint32_t entityId);
+    std::unique_ptr<WorldView> observeWorld();
 
 private:
 

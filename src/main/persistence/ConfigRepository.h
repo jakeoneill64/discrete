@@ -10,6 +10,7 @@
 #include <optional>
 #include <memory>
 
+// TODO very common pattern, might make sense to make this a bit more generic.
 class ConfigRepository{
 public:
     ConfigRepository(

@@ -5,8 +5,8 @@
 #include "persistence/sqlite3.h"
 #include "engine/Action.h"
 #include "input.h"
-#include "Factory.h"
 #include "util/types.h"
+#include "util/Factory.h"
 #include <shared_mutex>
 #include <memory>
 #include <unordered_map>

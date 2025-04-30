@@ -1,4 +1,0 @@
-# yaml-language-server: $schema=./schema.json
-name: "iteration-start"
-states:
-  -

@@ -5,12 +5,15 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 link_directories(lib)
 add_compile_definitions(DISCRETE_DEBUG)
+set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(discrete)
 
+find_package(Vulkan REQUIRED)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    find_library(VULKAN_LIB vulkan REQUIRED)
-    find_library(MOLTENVK_LIB MoltenVK REQUIRED)
+    find_library(VULKAN_LIB Vulkan REQUIRED)
+#    find_library(MOLTENVK_LIB MoltenVK REQUIRED)
     find_library(COCOA_LIB Cocoa REQUIRED)
     find_library(IOKIT_LIB IOKit REQUIRED)
     find_library(CORE_VIDEO_LIB CoreVideo REQUIRED)
@@ -25,6 +28,7 @@ target_link_libraries(
     ${IOKIT_LIB}
     ${CORE_VIDEO_LIB}
     ${METAL_LIB}
+    ${Vulkan_LIBRARIES}
     libglfw3.a
     libspdlog.a
 )
@@ -47,15 +51,39 @@ foreach(RESOURCE_FILE ${RESOURCES})
     )
 endforeach()
 
-file(GLOB_RECURSE SHADER_FILES "${CMAKE_SOURCE_DIR}/*.glsl")
+file(GLOB_RECURSE FRAGMENT_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/fragment/*")
+file(GLOB_RECURSE VERTEX_SHADER_FILES   "${CMAKE_SOURCE_DIR}/src/shader/vertex/*")
+file(GLOB_RECURSE COMPUTE_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/compute/*")
 
-foreach(SHADER ${SHADER_FILES})
+foreach(SHADER ${FRAGMENT_SHADER_FILES})
     get_filename_component(SHADER_NAME ${SHADER} NAME)
-    set(SPIRV_OUTPUT "${CMAKE_SOURCE_DIR}/resources/shader/bin/${SHADER_NAME}.spv")
+    set(SPIRV_OUTPUT "${CMAKE_SOURCE_DIR}/resources/shader/fragment/${SHADER_NAME}.spv")
 
     add_custom_command(
         OUTPUT ${SPIRV_OUTPUT}
-        COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT}
+        COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=fragment
+    )
+    list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
+endforeach()
+
+foreach(SHADER ${VERTEX_SHADER_FILES})
+    get_filename_component(SHADER_NAME ${SHADER} NAME)
+    set(SPIRV_OUTPUT "${CMAKE_SOURCE_DIR}/resources/shader/vertex/${SHADER_NAME}.spv")
+
+    add_custom_command(
+        OUTPUT ${SPIRV_OUTPUT}
+        COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=vertex
+    )
+    list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
+endforeach()
+
+foreach(SHADER ${COMPUTE_SHADER_FILES})
+    get_filename_component(SHADER_NAME ${SHADER} NAME)
+    set(SPIRV_OUTPUT "${CMAKE_SOURCE_DIR}/resources/shader/compute/${SHADER_NAME}.spv")
+
+    add_custom_command(
+        OUTPUT ${SPIRV_OUTPUT}
+        COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=compute
     )
     list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
 endforeach()
@@ -66,17 +94,21 @@ execute_process(
         OUTPUT_VARIABLE LINK_DEPS
 )
 
-execute_process(
-        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
-)
+#execute_process(
+#        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
+#)
+#
+#add_custom_target(deploy_modules
+#    COMMAND scripting/deploy_modules.sh
+#    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#)
 
-add_custom_target(deploy_modules
-    COMMAND scripting/deploy_modules.sh
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
+# TODO
+# sort out rebuild modules on every launch
+# database file (and other application state) should go to /var/discrete
+# there should be a target to run the db scripts at build time.
 
-
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main ${Vulkan_INCLUDE_DIRS})
 
 file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
@@ -84,7 +116,7 @@ target_sources(discrete PRIVATE ${SOURCE})
 
 add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES})
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
-add_dependencies(discrete generate_resources compile_shaders deploy_modules)
+add_dependencies(discrete generate_resources compile_shaders)
 
 
 foreach(TEST_FILE ${TEST})
@@ -104,5 +136,3 @@ foreach(TEST_FILE ${TEST})
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
-
-

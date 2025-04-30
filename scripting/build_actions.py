@@ -39,7 +39,7 @@ f"""#ifndef DISCRETE_ACTION_REGISTRATION_H
 #define DISCRETE_ACTION_REGISTRATION_H
 
 {imports}
-#include "Factory.h"
+#include "util/Factory.h"
 #include <memory>
 
 // --- GENERATED FILE ---

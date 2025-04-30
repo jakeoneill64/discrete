@@ -11,6 +11,4 @@ VALUES
 ('client.logger.name', 'discrete engine'),
 ('client.window.name', 'discrete engine'),
 ('client.window.initial_width', '800'),
-('client.window.initial_height', '600'),
-('client.render.gl_version_major', '4'),
-('client.render.gl_version_minor', '6')
+('client.window.initial_height', '600')
