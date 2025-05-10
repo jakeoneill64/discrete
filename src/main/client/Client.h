@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "vulkan/vulkan.h"
-#include "GLFW/glfw3.h"
+#include "glfw3.h"
 #include "engine/Engine.h"
 #include "./input/input.h"
 #include "persistence/sqlite3.h"

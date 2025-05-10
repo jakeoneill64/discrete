@@ -1,16 +1,20 @@
 #define GLFW_INCLUDE_VULKAN
 
-#include "GLFW/glfw3.h"
+#include "glfw3.h"
 #include "Client.h"
 #include "input/input.h"
 #include "persistence/database.h"
 #include "persistence/sqlite3.h"
 #include "render/render.h"
+#include "render/Shader.h"
+#include "data/basic.frag.spv.h"
+#include "data/basic.vert.spv.h"
 
 #include <string>
 #include <vector>
 #include <ranges>
 #include <iostream>
+#include <span>
 
 Client::Client()
 :
@@ -265,9 +269,38 @@ Client::Client()
         throw std::runtime_error("Failed to create swapchain!");
     }
 
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.module = createShaderPipelineStep(device, basic_vert_spv, basic_vert_spv_len);
+    vertShaderStageInfo.pName = "main"; // Entry point of the shader
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module = createShaderPipelineStep(device, basic_frag_spv, basic_frag_spv_len);
+    fragShaderStageInfo.pName = "main";
+
+    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
 
     VkImage images[4]; uint32_t swapCount;
-//    vkGetSwapchainImagesKHR(dev, swap, &swapCount, images);
+    //    vkGetSwapchainImagesKHR(dev, swap, &swapCount, images);
 
 
     // --- initialise engine ---

@@ -13,7 +13,6 @@ find_package(Vulkan REQUIRED)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_library(VULKAN_LIB Vulkan REQUIRED)
-#    find_library(MOLTENVK_LIB MoltenVK REQUIRED)
     find_library(COCOA_LIB Cocoa REQUIRED)
     find_library(IOKIT_LIB IOKit REQUIRED)
     find_library(CORE_VIDEO_LIB CoreVideo REQUIRED)
@@ -28,29 +27,11 @@ target_link_libraries(
     ${IOKIT_LIB}
     ${CORE_VIDEO_LIB}
     ${METAL_LIB}
-    ${Vulkan_LIBRARIES}
     libglfw3.a
     libspdlog.a
 )
 
 file(GLOB_RECURSE RESOURCES "resources/*")
-
-set(DATA_FILES)
-foreach(RESOURCE_FILE ${RESOURCES})
-    get_filename_component(ORIGINAL_FILENAME ${RESOURCE_FILE} NAME)
-    get_filename_component(FILENAME_COMPONENT ${RESOURCE_FILE} NAME_WE)
-    # don't want hidden files like mac .DS_Store !!
-    if(${ORIGINAL_FILENAME} MATCHES "^\\.")
-        continue()
-    endif()
-    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/${FILENAME_COMPONENT}.h)
-    list(APPEND DATA_FILES ${DATA_FILE})
-    add_custom_command(
-        OUTPUT ${DATA_FILE}
-        COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${FILENAME_COMPONENT} ${DATA_FILE}
-    )
-endforeach()
-
 file(GLOB_RECURSE FRAGMENT_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/fragment/*")
 file(GLOB_RECURSE VERTEX_SHADER_FILES   "${CMAKE_SOURCE_DIR}/src/shader/vertex/*")
 file(GLOB_RECURSE COMPUTE_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/compute/*")
@@ -88,6 +69,22 @@ foreach(SHADER ${COMPUTE_SHADER_FILES})
     list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
 endforeach()
 
+set(DATA_FILES)
+foreach(RESOURCE_FILE ${RESOURCES})
+    get_filename_component(ORIGINAL_FILENAME ${RESOURCE_FILE} NAME)
+    # don't want hidden files like mac .DS_Store !!
+    if(${ORIGINAL_FILENAME} MATCHES "^\\.")
+        continue()
+    endif()
+    set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/data/${ORIGINAL_FILENAME}.h)
+    list(APPEND DATA_FILES ${DATA_FILE})
+    message("${RESOURCE_FILE}")
+    add_custom_command(
+        OUTPUT ${DATA_FILE}
+        COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${RESOURCE_FILE} ${DATA_FILE}
+    )
+endforeach()
+
 
 execute_process(
         COMMAND /usr/local/bin/python3 ${CMAKE_SOURCE_DIR}/scripting/build_actions.py ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
@@ -97,7 +94,7 @@ execute_process(
 #execute_process(
 #        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
 #)
-#
+
 #add_custom_target(deploy_modules
 #    COMMAND scripting/deploy_modules.sh
 #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -114,8 +111,8 @@ file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
 target_sources(discrete PRIVATE ${SOURCE})
 
-add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES})
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
+add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES} compile_shaders)
 add_dependencies(discrete generate_resources compile_shaders)
 
 
