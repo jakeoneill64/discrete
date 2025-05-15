@@ -95,10 +95,11 @@ execute_process(
 #        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
 #)
 
-#add_custom_target(deploy_modules
-#    COMMAND scripting/deploy_modules.sh
-#    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#)
+add_custom_target(deploy_modules
+    COMMAND scripting/deploy_modules.sh
+        USES_TERMINAL
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
 
 # TODO
 # sort out rebuild modules on every launch

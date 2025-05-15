@@ -6,13 +6,13 @@ buildGlm(){
     cmake .
     make
     mkdir  ../../include/glm
-    mv glm/libglm_static.a ../../lib
-    mv glm/*.hpp ../../include/glm
-    mv glm/gtc ../../include/glm
-    mv glm/detail ../../include/glm
-    mv glm/ext ../../include/glm
-    mv glm/gtx ../../include/glm
-    mv glm/simd ../../include/glm
+    cp -r glm/libglm_static.a ../../lib/glm
+    cp -r glm/*.hpp ../../include/glm
+    cp -r glm/gtc ../../include/glm
+    cp -r glm/detail ../../include/glm
+    cp -r glm/ext ../../include/glm
+    cp -r glm/gtx ../../include/glm
+    cp -r glm/simd ../../include/glm
     git clean -df
     git reset HEAD --hard
   )
@@ -23,8 +23,8 @@ buildGlfw(){
     cd glfw
     cmake .
     make
-    mv src/libglfw3.a ../../lib
-    mv include/GLFW/ ../../include
+    cp src/libglfw3.a ../../lib
+    cp -r include/GLFW/ ../../include/GLFW
     git clean -df
     git reset HEAD --hard
   )
@@ -45,8 +45,8 @@ buildGoogleTest(){
     done
 
 
-    cp -r googletest/include/gtest ../../include/
-    cp -r googlemock/include/gmock ../../include/
+    cp -r googletest/include/gtest ../../include/gtest
+    cp -r googlemock/include/gmock ../../include/gmock
     git clean -df
     git reset HEAD --hard
 
@@ -59,14 +59,14 @@ buildSpdlog(){
     cmake .
     make
 
-    mv libspdlog.a ../../lib/
-    mv include/spdlog ../../include
+    cp libspdlog.a ../../lib/
+    cp -r include/spdlog ../../include/spdlog
     git clean -df
     git reset HEAD --hard
   )
 }
 
-cd modules
+cd modules || exit
 
 for d in *
 do
