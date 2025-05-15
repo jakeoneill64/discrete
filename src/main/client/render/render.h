@@ -2,9 +2,12 @@
 #define DISCRETE_RENDER_H
 
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "glfw3.h"
+#include "glm/glm.hpp"
 
 #include <memory>
+#include <vector>
+#include <functional>
 
 const std::vector<const char*> INSTANCE_EXTENSION = {
     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
@@ -43,7 +46,6 @@ std::vector<T> enumerateVulkanList(const std::function<void(uint32_t* count, T* 
 struct Vertex{
     glm::vec3 position;
     glm::vec3 normal;
-
 };
 
 

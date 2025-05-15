@@ -7,6 +7,11 @@
 template < typename ... Types >
 struct type_list {};
 
+template <typename T, typename U>
+constexpr std::size_t offset_of(U T::*member) {
+    return reinterpret_cast<std::size_t>(&(((T*)0)->*member));
+}
+
 template<typename List, typename T>
 struct contains_type;
 template<typename T>
