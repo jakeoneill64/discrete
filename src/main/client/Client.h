@@ -3,14 +3,11 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "vulkan/vulkan.h"
-#include "glfw3.h"
+#include "GLFW/glfw3.h"
+#include "sqlite3.h"
 #include "engine/Engine.h"
-#include "./input/input.h"
-#include "persistence/sqlite3.h"
 #include "persistence/ConfigRepository.h"
 #include "input/InputRepository.h"
-#include "util/Factory.h"
-#include "engine/Action.h"
 
 #include <atomic>
 #include <memory>

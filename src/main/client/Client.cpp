@@ -1,6 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 
-#include "glfw3.h"
+#include "GLFW/glfw3.h"
 #include "Client.h"
 #include "input/input.h"
 #include "persistence/database.h"
@@ -216,6 +216,9 @@ Client::Client()
     VkDevice device;
     vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &device);
 
+    VkQueue graphicsQueue;
+    vkGetDeviceQueue(device, *selectedQueueFamilyIndex, 0, &graphicsQueue);
+
     VkCommandPoolCreateInfo commandPoolCreateInfo = {};
     commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolCreateInfo.queueFamilyIndex = *selectedQueueFamilyIndex;
@@ -350,8 +353,8 @@ Client::Client()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)capabilities.currentExtent.width;
-    viewport.height = (float)capabilities.currentExtent.height;
+    viewport.width = static_cast<float>(capabilities.currentExtent.width);
+    viewport.height = static_cast<float>(capabilities.currentExtent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -475,21 +478,18 @@ Client::Client()
     VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
 
     VkRenderPassBeginInfo renderPassBeginInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo. = renderPass;
-    renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapchainExtent;
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = renderPass;
+    renderPassBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
+    renderPassBeginInfo.renderArea.offset = {0, 0};
+    renderPassBeginInfo.renderArea.extent = capabilities.currentExtent;
+    renderPassBeginInfo.clearValueCount = 1;
+    renderPassBeginInfo.pClearValues = &clearColor;
 
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-
-    // Bind pipeline, descriptor sets, vertex buffers, etc. here
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-    // e.g., vkCmdDraw(...)
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
@@ -498,8 +498,22 @@ Client::Client()
         throw std::runtime_error("Failed to record command buffer!");
     }
 
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    // Optional: specify wait and signal semaphores
 
 
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &swapchain;
+    presentInfo.pImageIndices = &imageIndex;
+
+    vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
     // --- initialise engine ---
 

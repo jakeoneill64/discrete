@@ -2,7 +2,7 @@
 #define DISCRETE_RENDER_H
 
 #define GLFW_INCLUDE_VULKAN
-#include "glfw3.h"
+#include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 
 #include <memory>

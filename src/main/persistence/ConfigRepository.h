@@ -11,6 +11,8 @@
 #include <memory>
 
 // TODO very common pattern, might make sense to make this a bit more generic.
+// I really hate this impromtu caching machanism. completely unnessary and complicates
+// logic which would otherwise be simple.
 class ConfigRepository{
 public:
     ConfigRepository(

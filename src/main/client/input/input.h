@@ -2,7 +2,7 @@
 #define DISCRETE_INPUT_H
 
 #include <unordered_map>
-#include "glfw3.h"
+#include "GLFW/glfw3.h"
 
 const std::unordered_map<int, std::string> GLFW_KEY_MAPPINGS {
     {GLFW_KEY_W, "KEY_W"},

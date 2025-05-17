@@ -9,6 +9,18 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(discrete)
 
+include(FetchContent)
+
+FetchContent_Declare(
+        sqlite
+        URL https://www.sqlite.org/2025/sqlite-autoconf-3490200.tar.gz
+        URL_HASH SHA256=5c6d8697e8a32a1512a9be5ad2b2e7a891241c334f56f8b0fb4fc6051e1652e8
+)
+
+FetchContent_MakeAvailable(sqlite)
+
+add_library(sqlite)
+
 find_package(Vulkan REQUIRED)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -29,6 +41,7 @@ target_link_libraries(
     ${METAL_LIB}
     libglfw3.a
     libspdlog.a
+        sqlite
 )
 
 file(GLOB_RECURSE RESOURCES "resources/*")
@@ -85,32 +98,42 @@ foreach(RESOURCE_FILE ${RESOURCES})
     )
 endforeach()
 
-
-execute_process(
-        COMMAND /usr/local/bin/python3 ${CMAKE_SOURCE_DIR}/scripting/build_actions.py ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
-        OUTPUT_VARIABLE LINK_DEPS
+add_custom_target(build_actions
+        COMMAND python3 scripting/build_actions.py ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
+        USES_TERMINAL
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
-
-#execute_process(
-#        COMMAND python ${CMAKE_SOURCE_DIR}/scripting/deploy_modules.py
-#)
 
 add_custom_target(deploy_modules
-    COMMAND scripting/deploy_modules.sh
+        COMMAND scripting/deploy_modules.sh
         USES_TERMINAL
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
-# TODO
-# sort out rebuild modules on every launch
-# database file (and other application state) should go to /var/discrete
-# there should be a target to run the db scripts at build time.
-
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main ${Vulkan_INCLUDE_DIRS})
+include_directories(
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/src/main
+        ${Vulkan_INCLUDE_DIRS}
+        ${sqlite_SOURCE_DIR}
+)
 
 file(GLOB_RECURSE SOURCE "src/main/*")
 file(GLOB_RECURSE TEST "src/test/*")
+
 target_sources(discrete PRIVATE ${SOURCE})
+target_sources(sqlite PRIVATE "${sqlite_SOURCE_DIR}/sqlite3.c")
+
+add_custom_command(
+        OUTPUT ${sqlite_SOURCE_DIR}/sqlite3
+        COMMAND make sqlite3
+        WORKING_DIRECTORY ${sqlite_SOURCE_DIR}
+        COMMENT "Building sqlite3 target in ${sqlite_SOURCE_DIR}"
+        VERBATIM
+)
+
+add_custom_target(sqlite3
+        DEPENDS ${sqlite_SOURCE_DIR}/sqlite3
+)
 
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
 add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES} compile_shaders)
