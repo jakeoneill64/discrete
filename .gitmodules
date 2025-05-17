@@ -8,7 +8,7 @@
 	path = modules/glm
 	url = git@github.com:g-truc/glm.git
 	ignore = all
-	branch = bf71a83 # tag: GLM 0.9.9.8
+	branch = 2d4c4b4d # latest
 
 [submodule "modules/spdlog"]
 	path = modules/spdlog

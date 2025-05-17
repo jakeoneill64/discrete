@@ -2,7 +2,7 @@
 
 buildGlm(){
   (
-    cd glm
+    cd glm || exit
     cmake .
     make
     mkdir  ../../include/glm
@@ -20,7 +20,7 @@ buildGlm(){
 
 buildGlfw(){
   (
-    cd glfw
+    cd glfw || exit
     cmake .
     make
     cp src/libglfw3.a ../../lib
@@ -33,7 +33,7 @@ buildGlfw(){
 
 buildGoogleTest(){
   (
-    cd googletest
+    cd googletest || exit
     git submodule update --init
 
     cmake .
@@ -55,7 +55,7 @@ buildGoogleTest(){
 
 buildSpdlog(){
   (
-    cd spdlog
+    cd spdlog || exit
     cmake .
     make
 

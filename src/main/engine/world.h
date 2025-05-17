@@ -16,6 +16,11 @@ private:
     //KDTree<Voxel> for efficient spacial lookup
 };
 
+struct WorldView
+{
+    //immutable view of a world. memory efficient.
+};
+
 
 std::expected<std::shared_ptr<World>, std::runtime_error> load_world(const std::filesystem::path& path);
 
