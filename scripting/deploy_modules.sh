@@ -6,7 +6,7 @@ buildGlm(){
     cmake .
     make
     mkdir  ../../include/glm
-    cp -r glm/libglm_static.a ../../lib/glm
+    cp glm/*.a ../../lib
     cp -r glm/*.hpp ../../include/glm
     cp -r glm/gtc ../../include/glm
     cp -r glm/detail ../../include/glm
@@ -41,6 +41,7 @@ buildGoogleTest(){
 
     for file in lib/*
     do
+      [[ "$file" =~ .*main.a ]] && continue
       cp "$file" ../../lib/
     done
 
@@ -77,7 +78,9 @@ done
 git submodule update --init
 
 rm -rf ../lib
+rm -rf ../include
 mkdir ../lib
+mkdir ../include
 
 buildGlfw
 buildGlm

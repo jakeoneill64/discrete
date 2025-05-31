@@ -4,13 +4,15 @@
 #include <string>
 #include "spdlog/spdlog.h"
 
-enum class Logger{
-    SERVER,
-    CLIENT,
-    LOGGER_COUNT
-};
+class LoggingContext {
+public:
+    static void setLoggerName(const std::string& name);
+    static const std::string& getLoggerName();
 
-void log(Logger logger, const std::string &message, spdlog::level::level_enum);
-void log(Logger logger, const std::string &message);
+private:
+    static LoggingContext& get();
+    std::string loggerName;
+};
+void log(const std::string &message, spdlog::level::level_enum);
 
 #endif //DISCRETE_LOG_H

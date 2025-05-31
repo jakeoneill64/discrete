@@ -4,11 +4,12 @@
 #include "Client.h"
 #include "input/input.h"
 #include "persistence/database.h"
-#include "persistence/sqlite3.h"
+#include "sqlite3.h"
 #include "render/render.h"
 #include "render/Shader.h"
 #include "data/basic.frag.spv.h"
 #include "data/basic.vert.spv.h"
+#include "log.h"
 
 #include <string>
 #include <vector>
@@ -33,6 +34,8 @@ Client::Client()
     m_inputRepository{m_eventManager, m_database}
 {
 
+    LoggingContext::setLoggerName("client");
+
     sqlite3_update_hook(
         m_database.get(),
         dbEventCallback,
@@ -49,12 +52,12 @@ Client::Client()
     m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>(
             glfwCreateWindow(
             m_configRepository["client.window.initial_width"].transform(
-                [](const auto version){
+                [](const auto& version){
                     return std::stoi(version);
                 }
             ).value_or(6),
             m_configRepository["client.window.initial_height"].transform(
-                [](const auto version){
+                [](const auto& version){
                     return std::stoi(version);
                 }
             ).value_or(6),
@@ -70,16 +73,17 @@ Client::Client()
 
 #ifdef DISCRETE_DEBUG
 
-    std::vector<VkLayerProperties> availableValidationLayers{64};
-    std::uint32_t numberOfAvailableLayers;
-    vkEnumerateInstanceLayerProperties(&numberOfAvailableLayers, availableValidationLayers.data());
-    const auto availableValidationLayerNames = availableValidationLayers |
+    const auto availableValidationLayerNames = enumerateVulkanList<VkLayerProperties>(
+        []
+            (uint32_t* count, VkLayerProperties* data){
+            vkEnumerateInstanceLayerProperties(count, data);
+        }) |
         std::views::transform([](const VkLayerProperties &layer){
-            return layer.layerName;
+            return std::string_view{layer.layerName};
         });
 
-    std::for_each(VALIDATION_LAYERS.begin(), VALIDATION_LAYERS.end(), [&availableValidationLayerNames](auto &layer){
-        if(std::find(availableValidationLayerNames.begin(), availableValidationLayerNames.end(), layer) != availableValidationLayerNames.end())
+    std::ranges::for_each(VALIDATION_LAYERS, [&availableValidationLayerNames](auto &layer){
+        if(std::find(availableValidationLayerNames.begin(), availableValidationLayerNames.end(), layer) == availableValidationLayerNames.end())
             throw std::runtime_error(std::string("Validation layer ") + layer + " not available.");
     });
 
@@ -91,26 +95,18 @@ Client::Client()
     debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    debugCreateInfo.pfnUserCallback = [](
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData
-    ) -> VkBool32 {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-        return VK_FALSE;
-    };
+    debugCreateInfo.pfnUserCallback = vulkanDebugCallback;
 
 #endif
 
     uint32_t glfwExtensionCount{0};
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> allInstanceExtensions{glfwExtensions, glfwExtensions + glfwExtensionCount};
-    allInstanceExtensions.insert(allInstanceExtensions.end(), INSTANCE_EXTENSION.begin(), INSTANCE_EXTENSION.end());
+    allInstanceExtensions.insert(allInstanceExtensions.end(), INSTANCE_EXTENSIONS.begin(), INSTANCE_EXTENSIONS.end());
 
     VkInstanceCreateInfo instanceCreateInfo = {
         VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,                 // VkStructureType sType;
-        (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo,  // const void* pNext;
+        (&debugCreateInfo),                                     // const void* pNext;
         // macos / moltenvk requires portability flag
         VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,       // VkInstanceCreateFlags flags;
         nullptr,                                                // const VkApplicationInfo* pApplicationInfo;
@@ -137,14 +133,45 @@ Client::Client()
 
     VkPhysicalDevice chosenDevice{physicalDevices[0]};
     for(const auto &physicalDevice : physicalDevices){
-        // select based on: Discrete GPU, RTX capability, Compute Shaders, Memory Capacity, Speed
+        // TODO select based on:
+        // Discrete GPU, RTX capability, Compute Shaders, Memory Capacity, Speed
+        // as well as support for our enabled features features
         VkPhysicalDeviceProperties properties;
-        VkPhysicalDeviceFeatures features;
+        VkPhysicalDeviceFeatures deviceFeatures;
         VkPhysicalDeviceMemoryProperties memoryProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-        vkGetPhysicalDeviceFeatures(physicalDevice, &features);
+        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
+        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures{};
+        accelStructFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        accelStructFeatures.accelerationStructure = VK_TRUE;
+
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
+        rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+        descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+        descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+        descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+
+        VkPhysicalDeviceFeatures2 deviceFeatures2{};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.features = deviceFeatures;
+
+        bufferDeviceAddressFeatures.pNext = &accelStructFeatures;
+        accelStructFeatures.pNext = &rayTracingPipelineFeatures;
+        rayTracingPipelineFeatures.pNext = &descriptorIndexingFeatures;
+        deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
+
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
+        // now we can check for these non-core feature support with something like
+        // rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE
     }
 
     std::vector<VkQueueFamilyProperties> deviceQueueFamilies = enumerateVulkanList<VkQueueFamilyProperties>(
@@ -175,6 +202,7 @@ Client::Client()
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
+
 
     VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
     bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
@@ -214,7 +242,10 @@ Client::Client()
 
 
     VkDevice device;
-    vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &device);
+    if (vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create device");
+    }
 
     VkQueue graphicsQueue;
     vkGetDeviceQueue(device, *selectedQueueFamilyIndex, 0, &graphicsQueue);

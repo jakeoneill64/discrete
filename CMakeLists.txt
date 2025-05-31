@@ -16,13 +16,11 @@ file(GLOB_RECURSE COMPUTE_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/compute/*
 set(SUBMODULE_ARTIFACTS
         ${CMAKE_SOURCE_DIR}/libglfw3.a
         ${CMAKE_SOURCE_DIR}/libgmock.a
-        ${CMAKE_SOURCE_DIR}/libgmock_main.a
+        ${CMAKE_SOURCE_DIR}/libglm.a
         ${CMAKE_SOURCE_DIR}/libgtest.a
-        ${CMAKE_SOURCE_DIR}/libgtest_main.a
         ${CMAKE_SOURCE_DIR}/libspdlog.a
 
         ${CMAKE_SOURCE_DIR}/include/GLFW
-        ${CMAKE_SOURCE_DIR}/include/data
         ${CMAKE_SOURCE_DIR}/include/glm
         ${CMAKE_SOURCE_DIR}/include/gmock
         ${CMAKE_SOURCE_DIR}/include/gtest
@@ -48,6 +46,9 @@ FetchContent_MakeAvailable(SQLITE)
 
 add_library(sqlite STATIC)
 target_sources(sqlite PRIVATE "${sqlite_SOURCE_DIR}/sqlite3.c")
+set_target_properties(sqlite PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib"
+)
 
 add_custom_command(
         OUTPUT ${sqlite_SOURCE_DIR}/sqlite3
@@ -76,6 +77,9 @@ add_custom_target(sqlite3
         DEPENDS ${sqlite_SOURCE_DIR}/sqlite3
 )
 
+file(COPY "${sqlite_SOURCE_DIR}/sqlite3.h"
+        DESTINATION "${CMAKE_SOURCE_DIR}/include")
+
 target_include_directories(
         sqlite
         PRIVATE
@@ -84,13 +88,17 @@ target_include_directories(
 
 add_executable(discrete)
 target_sources(discrete PRIVATE ${SOURCE})
-
 target_include_directories(
         discrete
         PRIVATE
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/src/main
         ${Vulkan_INCLUDE_DIRS}
+)
+target_link_directories(
+        discrete
+        PRIVATE
+        lib
 )
 
 target_link_libraries(
@@ -171,7 +179,7 @@ add_custom_target(build_actions
 )
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
 add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES} compile_shaders)
-add_dependencies(discrete generate_resources compile_shaders deploy_modules build_actions)
+add_dependencies(discrete generate_resources compile_shaders build_actions)
 
 foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)

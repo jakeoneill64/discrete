@@ -2,7 +2,7 @@
 #define DISCRETE_CONFIG_H
 
 #include "event/EventManager.h"
-#include "persistence/sqlite3.h"
+#include "sqlite3.h"
 #include <shared_mutex>
 #include <unordered_map>
 #include <string>

@@ -2,9 +2,8 @@
 #define DISCRETE_INPUTREPOSITORY_H
 
 #include "event/EventManager.h"
-#include "persistence/sqlite3.h"
+#include "sqlite3.h"
 #include "engine/Action.h"
-#include "input.h"
 #include "util/types.h"
 #include "util/Factory.h"
 #include <shared_mutex>

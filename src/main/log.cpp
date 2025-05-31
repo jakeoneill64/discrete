@@ -1,7 +1,3 @@
-//
-// Created by Jake M O'Neill on 10/09/2022.
-//
-
 #include "log.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/rotating_file_sink.h"
@@ -9,34 +5,48 @@
 #include <vector>
 #include <memory>
 
-void log(Logger logger, const std::string &message, spdlog::level::level_enum log_level){
 
-    static std::array
-            <
-                std::string,
-                static_cast<size_t>(Logger::LOGGER_COUNT)
-            >
-            logger_names{discrete::SERVER_LOGGER_NAME, discrete::CLIENT_LOGGER_NAME};
+void LoggingContext::setLoggerName(const std::string& name) {
+    if (!get().loggerName.empty())
+    {
+        throw std::runtime_error("Logging context already set");
+    }
+    get().loggerName = name;
+}
 
-    if(logger == Logger::LOGGER_COUNT) return;
+const std::string& LoggingContext::getLoggerName() {
+    return get().loggerName;
+}
 
-    std::string logger_name{logger_names[static_cast<int>(logger)]};
-    auto spd_logger = spdlog::get(logger_name);
+LoggingContext& LoggingContext::get() {
+    thread_local LoggingContext instance;
+    return instance;
+}
 
-    if(!spd_logger){
+void log(const std::string &message, spdlog::level::level_enum log_level){
+
+    const std::string& loggerName = LoggingContext::getLoggerName();
+    auto logger = spdlog::get(loggerName);
+
+    if(!logger){
 
         static std::vector<spdlog::sink_ptr> sinks{
 #ifdef DISCRETE_DEBUG
-            std::make_shared<spdlog::sinks::rotating_file_sink_mt> ("discrete.log", 1024*1024*1024, 5, false),
+            std::make_shared<spdlog::sinks::rotating_file_sink_mt> (
+                loggerName + ".log",
+                1024*1024*64,
+                5,
+                false
+                ),
 #endif
             std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
         };
 
-        spd_logger = std::make_shared<spdlog::logger>(logger_name, begin(sinks), end(sinks));
-        spdlog::register_logger(spd_logger);
+        logger = std::make_shared<spdlog::logger>(loggerName, begin(sinks), end(sinks));
+        spdlog::register_logger(logger);
     }
 
-    spd_logger->log(log_level, message);
+    logger->log(log_level, message);
 
 }
 
