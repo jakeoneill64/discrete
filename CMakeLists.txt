@@ -14,17 +14,17 @@ file(GLOB_RECURSE FRAGMENT_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/fragment
 file(GLOB_RECURSE VERTEX_SHADER_FILES   "${CMAKE_SOURCE_DIR}/src/shader/vertex/*")
 file(GLOB_RECURSE COMPUTE_SHADER_FILES "${CMAKE_SOURCE_DIR}/src/shader/compute/*")
 set(SUBMODULE_ARTIFACTS
-        ${CMAKE_SOURCE_DIR}/libglfw3.a
-        ${CMAKE_SOURCE_DIR}/libgmock.a
-        ${CMAKE_SOURCE_DIR}/libglm.a
-        ${CMAKE_SOURCE_DIR}/libgtest.a
-        ${CMAKE_SOURCE_DIR}/libspdlog.a
+        ${CMAKE_SOURCE_DIR}/lib/libglfw3.a
+        ${CMAKE_SOURCE_DIR}/lib/libgmock.a
+        ${CMAKE_SOURCE_DIR}/lib/libglm.a
+        ${CMAKE_SOURCE_DIR}/lib/libgtest.a
+        ${CMAKE_SOURCE_DIR}/lib/libspdlog.a
 
-        ${CMAKE_SOURCE_DIR}/include/GLFW
-        ${CMAKE_SOURCE_DIR}/include/glm
-        ${CMAKE_SOURCE_DIR}/include/gmock
-        ${CMAKE_SOURCE_DIR}/include/gtest
-        ${CMAKE_SOURCE_DIR}/include/spdlog
+        ${CMAKE_SOURCE_DIR}/include/GLFW/glfw3.h
+        ${CMAKE_SOURCE_DIR}/include/glm/glm.hpp
+        ${CMAKE_SOURCE_DIR}/include/gmock/gmock.h
+        ${CMAKE_SOURCE_DIR}/include/gtest/gtest.h
+        ${CMAKE_SOURCE_DIR}/include/spdlog/spdlog.h
 )
 
 find_package(Vulkan REQUIRED)
@@ -121,6 +121,7 @@ foreach(SHADER ${FRAGMENT_SHADER_FILES})
     add_custom_command(
         OUTPUT ${SPIRV_OUTPUT}
         COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=fragment
+            DEPENDS ${SHADER}
     )
     list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
 endforeach()
@@ -132,6 +133,7 @@ foreach(SHADER ${VERTEX_SHADER_FILES})
     add_custom_command(
         OUTPUT ${SPIRV_OUTPUT}
         COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=vertex
+            DEPENDS ${SHADER}
     )
     list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
 endforeach()
@@ -143,6 +145,7 @@ foreach(SHADER ${COMPUTE_SHADER_FILES})
     add_custom_command(
         OUTPUT ${SPIRV_OUTPUT}
         COMMAND glslc ${SHADER} -o ${SPIRV_OUTPUT} -fshader-stage=compute
+            DEPENDS ${SHADER}
     )
     list(APPEND SPIRV_FILES ${SPIRV_OUTPUT})
 endforeach()
@@ -156,10 +159,10 @@ foreach(RESOURCE_FILE ${RESOURCES})
     endif()
     set(DATA_FILE ${CMAKE_SOURCE_DIR}/include/data/${ORIGINAL_FILENAME}.h)
     list(APPEND DATA_FILES ${DATA_FILE})
-    message("${RESOURCE_FILE}")
     add_custom_command(
         OUTPUT ${DATA_FILE}
         COMMAND ${CMAKE_SOURCE_DIR}/scripting/embedded_data_header.sh ${RESOURCE_FILE} ${DATA_FILE}
+            DEPENDS ${RESOURCE_FILE}
     )
 endforeach()
 
@@ -171,6 +174,7 @@ add_custom_command(
 )
 add_custom_target(deploy_modules ALL DEPENDS ${SUBMODULE_ARTIFACTS})
 add_custom_target(build_actions
+        ALL
         COMMAND python3 scripting/build_actions.py
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
@@ -178,12 +182,14 @@ add_custom_target(build_actions
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_FILES})
-add_custom_target(generate_resources ALL DEPENDS ${DATA_FILES} compile_shaders)
-add_dependencies(discrete generate_resources compile_shaders build_actions)
+add_custom_target(generate_resources ALL DEPENDS compile_shaders ${DATA_FILES})
+add_dependencies(discrete generate_resources build_actions deploy_modules sqlite)
 
 foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
+    # TODO rename this script, jesus
+    # TODO this python invocation is tightly coupled, let's see if we can loosen this up.
     execute_process(
         COMMAND /usr/local/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripting/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE LINK_DEPS
