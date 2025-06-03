@@ -18,13 +18,10 @@ const std::vector<const char*> INSTANCE_EXTENSIONS = {
 };
 
 const std::vector<const char*> DEVICE_EXTENSIONS = {
-    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME
+    VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_portability_subset",
 };
 
 #ifdef DISCRETE_DEBUG
@@ -41,11 +38,12 @@ VKAPI_ATTR inline VkBool32 VKAPI_CALL vulkanDebugCallback(
 
     std::string messageType =
     std::string{
-        messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT      ? "[GENERAL] "     : ""} +
-        (messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  ? "[VALIDATION] "  : "") +
-        (messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ? "[PERFORMANCE] " : "");
+        messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT      ? "[general] "     : ""} +
+        (messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT  ? "[validation] "  : "") +
+        (messageTypes & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ? "[performance] " : "");
 
-    auto level = (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ? spdlog::level::err :
+    const auto level =
+             (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ? spdlog::level::err :
              (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ? spdlog::level::warn :
              (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ? spdlog::level::info :
              (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) ? spdlog::level::debug :
@@ -68,13 +66,32 @@ VKAPI_ATTR inline VkBool32 VKAPI_CALL vulkanDebugCallback(
 #endif
 
 template<typename T>
-std::vector<T> enumerateVulkanList(const std::function<void(uint32_t* count, T* data)> &vulkanEnumerator) {
+std::vector<T> vulkanEnumerateList(const std::function<void(uint32_t* count, T* data)> &vulkanEnumerator) {
     uint32_t count = 0;
     vulkanEnumerator(&count, nullptr);
     std::vector<T> result(count);
     vulkanEnumerator(&count, result.data());
     return result;
 }
+
+inline uint32_t vulkanFindMemoryIndex(
+        uint32_t typeFilter,
+        VkMemoryPropertyFlags properties,
+        VkPhysicalDevice physicalDevice
+        ) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if (typeFilter & 1 << i &&
+            (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+            }
+    }
+
+    throw std::runtime_error("Failed to find suitable memory type!");
+}
+
 
 
 struct Vertex{

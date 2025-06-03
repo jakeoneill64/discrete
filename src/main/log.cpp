@@ -4,7 +4,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <vector>
 #include <memory>
-
+#include <ranges>
 
 void LoggingContext::setLoggerName(const std::string& name) {
     if (!get().loggerName.empty())
@@ -31,18 +31,26 @@ void log(const std::string &message, spdlog::level::level_enum log_level){
     if(!logger){
 
         static std::vector<spdlog::sink_ptr> sinks{
-#ifdef DISCRETE_DEBUG
             std::make_shared<spdlog::sinks::rotating_file_sink_mt> (
                 loggerName + ".log",
                 1024*1024*64,
                 5,
                 false
                 ),
-#endif
             std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
         };
 
         logger = std::make_shared<spdlog::logger>(loggerName, begin(sinks), end(sinks));
+
+        // TODO add a config entry for the log level.
+        logger->set_level(spdlog::level::debug);
+        std::ranges::for_each(sinks, [](const auto& sink)
+        {
+            sink->set_level(
+                spdlog::level::debug
+                );
+        });
+
         spdlog::register_logger(logger);
     }
 

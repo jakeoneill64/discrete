@@ -73,7 +73,7 @@ Client::Client()
 
 #ifdef DISCRETE_DEBUG
 
-    const auto availableValidationLayerNames = enumerateVulkanList<VkLayerProperties>(
+    const auto availableValidationLayerNames = vulkanEnumerateList<VkLayerProperties>(
         []
             (uint32_t* count, VkLayerProperties* data){
             vkEnumerateInstanceLayerProperties(count, data);
@@ -104,12 +104,21 @@ Client::Client()
     std::vector<const char*> allInstanceExtensions{glfwExtensions, glfwExtensions + glfwExtensionCount};
     allInstanceExtensions.insert(allInstanceExtensions.end(), INSTANCE_EXTENSIONS.begin(), INSTANCE_EXTENSIONS.end());
 
+    VkApplicationInfo applicationInfo = {
+        .apiVersion =VK_API_VERSION_1_1,
+        .pApplicationName = "Discrete Engine"
+    };
+
     VkInstanceCreateInfo instanceCreateInfo = {
-        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,                 // VkStructureType sType;
-        (&debugCreateInfo),                                     // const void* pNext;
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,                // VkStructureType sType;
+#ifdef DISCRETE_DEBUG
+        (&debugCreateInfo),                                    // const void* pNext;
+#elif
+        nullptr,
+#endif
         // macos / moltenvk requires portability flag
         VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,       // VkInstanceCreateFlags flags;
-        nullptr,                                                // const VkApplicationInfo* pApplicationInfo;
+        &applicationInfo,                                                // const VkApplicationInfo* pApplicationInfo;
 #ifdef DISCRETE_DEBUG
         static_cast<uint32_t>(VALIDATION_LAYERS.size()),
         VALIDATION_LAYERS.data(),
@@ -125,7 +134,16 @@ Client::Client()
         throw std::runtime_error("Failed to create Vulkan instance!");
     }
 
-    std::vector<VkPhysicalDevice> physicalDevices = enumerateVulkanList<VkPhysicalDevice>(
+    VkDebugUtilsMessengerEXT debugMessenger;
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanInstance, "vkCreateDebugUtilsMessengerEXT");
+    if (func) {
+        if (func(m_vulkanInstance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+            throw std::runtime_error("failed to set up debug messenger!");
+        }
+    }
+
+
+    std::vector<VkPhysicalDevice> physicalDevices = vulkanEnumerateList<VkPhysicalDevice>(
         [&](uint32_t* count, VkPhysicalDevice* data){
             vkEnumeratePhysicalDevices(m_vulkanInstance, count, data);
         }
@@ -172,9 +190,17 @@ Client::Client()
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
         // now we can check for these non-core feature support with something like
         // rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE
+
+        std::vector<VkExtensionProperties> deviceExtensionProperties = vulkanEnumerateList<VkExtensionProperties>(
+            [physicalDevice]
+            (uint32_t* count, auto data)
+            {
+                vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, count, data);
+            });
+
     }
 
-    std::vector<VkQueueFamilyProperties> deviceQueueFamilies = enumerateVulkanList<VkQueueFamilyProperties>(
+    std::vector<VkQueueFamilyProperties> deviceQueueFamilies = vulkanEnumerateList<VkQueueFamilyProperties>(
         [&](uint32_t* count, VkQueueFamilyProperties* data){
             vkGetPhysicalDeviceQueueFamilyProperties(chosenDevice, count, data);
         }
@@ -260,16 +286,16 @@ Client::Client()
         throw std::runtime_error("Failed to create command pool!");
     }
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.commandPool = commandPool;
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferAllocateInfo.commandBufferCount = 1;
 
     // TODO allocate one of these per frame and mark them as transient
     // https://kylemayes.github.io/vulkanalia/dynamic/recycling_command_buffers.html
     VkCommandBuffer commandBuffer;
-    if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate command buffer!");
     }
 
@@ -281,21 +307,27 @@ Client::Client()
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(chosenDevice, surface, &capabilities);
 
-    VkSwapchainCreateInfoKHR swapchainInfo{};
-    swapchainInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swapchainInfo.surface = surface;
-    swapchainInfo.minImageCount = 3; // triple buffered
-    swapchainInfo.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
-    swapchainInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    swapchainInfo.imageExtent = capabilities.currentExtent;
-    swapchainInfo.imageArrayLayers = 1;
-    swapchainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchainInfo.preTransform = capabilities.currentTransform;
-    swapchainInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchainInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-    swapchainInfo.clipped = VK_TRUE;
-    swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
+    VkSwapchainCreateInfoKHR swapchainInfo{
+        .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext            = nullptr,
+        .flags            = 0,
+        .surface          = surface,
+        .minImageCount    = 3,
+        .imageFormat      = VK_FORMAT_B8G8R8A8_UNORM,
+        .imageColorSpace  = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+        .imageExtent      = capabilities.currentExtent,
+        .imageArrayLayers = 1,
+        .imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices   = nullptr,
+        .preTransform     = capabilities.currentTransform,
+        .compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode      = VK_PRESENT_MODE_FIFO_KHR,
+        .clipped          = VK_TRUE,
+        .oldSwapchain     = VK_NULL_HANDLE
+    };
+
 
     VkSwapchainKHR swapchain;
     if (vkCreateSwapchainKHR(device, &swapchainInfo, nullptr, &swapchain) != VK_SUCCESS) {
@@ -314,7 +346,7 @@ Client::Client()
     fragShaderStageInfo.module = createShaderPipelineStep(device, basic_frag_spv, basic_frag_spv_len);
     fragShaderStageInfo.pName = "main";
 
-    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
+    std::array shaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -331,6 +363,39 @@ Client::Client()
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
+    VkPipelineColorBlendAttachmentState colorBlendAttachment = {
+        .blendEnable = VK_FALSE,
+        .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+        .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
+        .colorBlendOp = VK_BLEND_OP_ADD,
+        .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+        .alphaBlendOp = VK_BLEND_OP_ADD,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                          VK_COLOR_COMPONENT_G_BIT |
+                          VK_COLOR_COMPONENT_B_BIT |
+                          VK_COLOR_COMPONENT_A_BIT,
+    };
+
+    VkPipelineColorBlendStateCreateInfo colorBlending = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .logicOpEnable = VK_FALSE,
+        .logicOp = VK_LOGIC_OP_COPY,
+        .attachmentCount = 1,
+        .pAttachments = &colorBlendAttachment,
+        .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
+    };
+
+    VkPipelineMultisampleStateCreateInfo multisampling = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .sampleShadingEnable = VK_FALSE,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+        .minSampleShading = 1.0f,
+        .pSampleMask = nullptr,
+        .alphaToCoverageEnable = VK_FALSE,
+        .alphaToOneEnable = VK_FALSE,
+    };
+
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = VK_FORMAT_B8G8R8A8_UNORM;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -339,19 +404,36 @@ Client::Client()
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+    VkAttachmentDescription depthAttachment{};
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    std::array attachments = { colorAttachment, depthAttachment };
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
@@ -400,15 +482,41 @@ Client::Client()
     viewportState.scissorCount = 1;
     viewportState.pScissors = &scissor;
 
+    VkDescriptorSetLayoutBinding matricesLayoutBinding{};
+    matricesLayoutBinding.binding = 0;
+    matricesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    matricesLayoutBinding.descriptorCount = 1;
+    matricesLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    matricesLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &matricesLayoutBinding;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create descriptor set layout!");
+    }
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; // or descriptor set layouts
+    pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
     VkPipelineLayout pipelineLayout;
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline layout!");
     }
+
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -421,56 +529,118 @@ Client::Client()
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.subpass = 0;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = &depthStencil;
 
     VkPipeline graphicsPipeline;
     vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline);
 
-
-    std::vector<VkImage> swapchainImages = enumerateVulkanList<VkImage>(
+    // TODO handle resizing. We need to destroy and recreate all images / imageviews.
+    std::vector<VkImage> swapchainImages = vulkanEnumerateList<VkImage>(
         [&](uint32_t* count, VkImage* data){
             vkGetSwapchainImagesKHR(device, swapchain, count, data);
         }
     );
 
     std::vector<VkImageView> swapchainImageViews{swapchainImages.size()};
+    std::vector<VkImage> depthImages(swapchainImages.size());
+    std::vector<VkDeviceMemory> depthImageMemories(swapchainImages.size());
+    std::vector<VkImageView> depthImageViews(swapchainImages.size());
 
-    for (size_t i = 0; i < swapchainImages.size(); i++) {
-    VkImageViewCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    createInfo.image = swapchainImages[i];
-    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    createInfo.format = VK_FORMAT_B8G8R8A8_UNORM; // Match swapchain format
+    for (size_t i = 0; i < swapchainImages.size(); i++)
+    {
+        VkImageViewCreateInfo colorViewInfo{};
+        colorViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        colorViewInfo.image = swapchainImages[i];
+        colorViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        colorViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
 
-    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        colorViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        colorViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        colorViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        colorViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    createInfo.subresourceRange.baseMipLevel = 0;
-    createInfo.subresourceRange.levelCount = 1;
-    createInfo.subresourceRange.baseArrayLayer = 0;
-    createInfo.subresourceRange.layerCount = 1;
+        colorViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        colorViewInfo.subresourceRange.baseMipLevel = 0;
+        colorViewInfo.subresourceRange.levelCount = 1;
+        colorViewInfo.subresourceRange.baseArrayLayer = 0;
+        colorViewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &createInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create image views!");
+        if (vkCreateImageView(device, &colorViewInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create color image view!");
+        }
+
+        VkImageCreateInfo depthImageInfo{};
+        depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+        depthImageInfo.format = VK_FORMAT_D32_SFLOAT;
+        depthImageInfo.extent.width = capabilities.currentExtent.width;
+        depthImageInfo.extent.height = capabilities.currentExtent.height;
+        depthImageInfo.extent.depth = 1;
+        depthImageInfo.mipLevels = 1;
+        depthImageInfo.arrayLayers = 1;
+        depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        depthImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        if (vkCreateImage(device, &depthImageInfo, nullptr, &depthImages[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create depth image!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(device, depthImages[i], &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = vulkanFindMemoryIndex(
+            memRequirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            physicalDevices[0]
+        );
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &depthImageMemories[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate depth image memory!");
+        }
+
+        vkBindImageMemory(device, depthImages[i], depthImageMemories[i], 0);
+
+        VkImageViewCreateInfo depthViewInfo{};
+        depthViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        depthViewInfo.image = depthImages[i];
+        depthViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        depthViewInfo.format = VK_FORMAT_D32_SFLOAT;
+        depthViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthViewInfo.subresourceRange.baseMipLevel = 0;
+        depthViewInfo.subresourceRange.levelCount = 1;
+        depthViewInfo.subresourceRange.baseArrayLayer = 0;
+        depthViewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(device, &depthViewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create depth image view!");
+        }
     }
-
-    }
-
 
     std::vector<VkFramebuffer> swapchainFramebuffers;
 
-    for (const auto& imageView : swapchainImageViews) {
-        VkImageView attachments[] = {
-            imageView
+    for (size_t i = 0; i < swapchainImageViews.size(); ++i) {
+        std::array attachments = {
+            swapchainImageViews[i],
+            depthImageViews[i]
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = capabilities.currentExtent.width;
         framebufferInfo.height = capabilities.currentExtent.height;
         framebufferInfo.layers = 1;
@@ -533,8 +703,6 @@ Client::Client()
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    // Optional: specify wait and signal semaphores
-
 
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
@@ -562,7 +730,7 @@ Client::Client()
     });
 
     m_eventManager->subscribeEvent<KeyEvent>(
-        [&](KeyEvent event){
+        [&](const KeyEvent event){
         if(event.action != GLFW_REPEAT && event.action != GLFW_PRESS)
             return;
 //        m_engine.submit(
