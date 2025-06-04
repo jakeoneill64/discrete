@@ -25,7 +25,7 @@ const std::vector<const char*> DEVICE_EXTENSIONS = {
 };
 
 #ifdef DISCRETE_DEBUG
-const std::vector<const char*> VALIDATION_LAYERS = {
+const std::vector<const char*> VALIDATION_LAYERS {
     "VK_LAYER_KHRONOS_validation"
 };
 
@@ -100,7 +100,7 @@ struct Vertex{
 };
 
 
-glm::vec3 vertices[] = {
+constexpr glm::vec3 vertices[] = {
     {-0.5f, -0.5f,  0.5f},
     { 0.5f, -0.5f,  0.5f},
     { 0.5f,  0.5f,  0.5f},
@@ -127,7 +127,7 @@ glm::vec3 vertices[] = {
     {-0.5f, -0.5f, -0.5f}
 };
 
-glm::vec3 normals[] = {
+constexpr glm::vec3 normals[] = {
     { 0.0f,  0.0f,  1.0f},
     { 0.0f,  0.0f,  1.0f},
     { 0.0f,  0.0f,  1.0f},
@@ -154,7 +154,16 @@ glm::vec3 normals[] = {
     {-1.0f,  0.0f,  0.0f}
 };
 
-glm::vec2 uvs[] = {
+constexpr uint16_t indices[] = {
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4,
+    8, 9,10,10,11, 8,
+   12,13,14,14,15,12,
+   16,17,18,18,19,16,
+   20,21,22,22,23,20
+};
+
+constexpr glm::vec2 uvs[] = {
     {0.0f, 0.0f},
     {1.0f, 0.0f},
     {1.0f, 1.0f},

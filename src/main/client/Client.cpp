@@ -10,6 +10,8 @@
 #include "data/basic.frag.spv.h"
 #include "data/basic.vert.spv.h"
 #include "log.h"
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <string>
 #include <vector>
@@ -55,18 +57,17 @@ Client::Client()
                 [](const auto& version){
                     return std::stoi(version);
                 }
-            ).value_or(6),
+            ).value_or(800),
             m_configRepository["client.window.initial_height"].transform(
                 [](const auto& version){
                     return std::stoi(version);
                 }
-            ).value_or(6),
+            ).value_or(600),
             m_configRepository["client.window.name"].value_or("Discrete Engine").c_str(),
             nullptr,
             nullptr)
     );
 
-    glfwMakeContextCurrent(m_window.get());
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow *window, int width, int height) {
         //TODO vulkan adjust viewport / surface
     });
@@ -440,12 +441,17 @@ Client::Client()
     VkRenderPass renderPass;
     vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
 
-    VkVertexInputBindingDescription bindingDescription{};
-    bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(Vertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    std::array<VkVertexInputBindingDescription, 2> bindingDescriptions{};
 
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    bindingDescriptions[0].binding = 0;
+    bindingDescriptions[0].stride = sizeof(Vertex);
+    bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    bindingDescriptions[1].binding = 1;
+    bindingDescriptions[1].stride = sizeof(glm::mat4);
+    bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    std::array<VkVertexInputAttributeDescription, 6> attributeDescriptions{};
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -456,10 +462,17 @@ Client::Client()
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[1].offset = offset_of(&Vertex::normal);
 
+    for (uint32_t i = 0; i < 4; ++i) {
+        attributeDescriptions[2 + i].binding = 1;
+        attributeDescriptions[2 + i].location = 2 + i;
+        attributeDescriptions[2 + i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        attributeDescriptions[2 + i].offset = sizeof(glm::vec4) * i;
+    }
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -504,6 +517,100 @@ Client::Client()
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 1;
+
+    VkDescriptorPool descriptorPool;
+    vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
+
+    VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
+    descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocateInfo.descriptorPool = descriptorPool;
+    descriptorSetAllocateInfo.descriptorSetCount = 1;
+    descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
+
+    VkDescriptorSet descriptorSet;
+    vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, &descriptorSet);
+
+    VkBuffer uniformBuffer;
+    VkDeviceMemory uniformBufferMemory;
+
+    VkBufferCreateInfo uniformBufferInfo{};
+    uniformBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    uniformBufferInfo.size = 2 * sizeof(glm::mat4);
+    uniformBufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    uniformBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &uniformBufferInfo, nullptr, &uniformBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create index buffer");
+    }
+
+    VkMemoryRequirements uniformBufferMemoryRequirements;
+    vkGetBufferMemoryRequirements(device, uniformBuffer, &uniformBufferMemoryRequirements);
+
+    uint32_t uboMemoryTypeIndex = vulkanFindMemoryIndex(
+        uniformBufferMemoryRequirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        physicalDevices[0]
+    );
+
+    VkMemoryAllocateInfo uniformBufferMemoryAllocateInfo{};
+    uniformBufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    uniformBufferMemoryAllocateInfo.allocationSize = uniformBufferMemoryRequirements.size;
+    uniformBufferMemoryAllocateInfo.memoryTypeIndex = uboMemoryTypeIndex;
+
+    if (vkAllocateMemory(device, &uniformBufferMemoryAllocateInfo, nullptr, &uniformBufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate index buffer memory");
+    }
+
+    vkBindBufferMemory(device, uniformBuffer, uniformBufferMemory, 0);
+
+    void* uniformData;
+
+    glm::mat4 viewMatrix = glm::lookAt(
+    glm::vec3(0.0f, 3.0f, 5.0f),
+    glm::vec3(1.0f, 0.0f, 1.0f),
+    glm::vec3(0.0f, 1.0f, 0.0f)
+);
+
+    glm::mat4 projectionMatrix = glm::perspective(
+        glm::radians(45.0f),
+        static_cast<float>(capabilities.currentExtent.width) / static_cast<float>(capabilities.currentExtent.height),
+        0.1f,
+        100.0f
+    );
+
+    std::array<glm::mat4, 2> matrices{viewMatrix, projectionMatrix};
+    vkMapMemory(device, uniformBufferMemory, 0, 2 * sizeof(glm::mat4), 0, &uniformData);
+    memcpy(uniformData, matrices.data(), 2 * sizeof(glm::mat4));
+    vkUnmapMemory(device, uniformBufferMemory);
+
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = uniformBuffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(glm::mat4) * 2;
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSet;       // the descriptor set you allocated
+    descriptorWrite.dstBinding = 0;                // matches binding in your shader
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr;
+    descriptorWrite.pTexelBufferView = nullptr;
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+
 
     VkPipelineLayout pipelineLayout;
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -631,7 +738,7 @@ Client::Client()
     std::vector<VkFramebuffer> swapchainFramebuffers;
 
     for (size_t i = 0; i < swapchainImageViews.size(); ++i) {
-        std::array attachments = {
+        std::array frameBufferAttachments = {
             swapchainImageViews[i],
             depthImageViews[i]
         };
@@ -640,7 +747,7 @@ Client::Client()
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.pAttachments = frameBufferAttachments.data();
         framebufferInfo.width = capabilities.currentExtent.width;
         framebufferInfo.height = capabilities.currentExtent.height;
         framebufferInfo.layers = 1;
@@ -653,12 +760,21 @@ Client::Client()
         swapchainFramebuffers.push_back(framebuffer);
     }
 
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkSemaphore imageAvailableSemaphore;
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create semaphore!");
+    }
+
+
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(
         device,
         swapchain,
         UINT64_MAX,
-        nullptr,
+        imageAvailableSemaphore,
         VK_NULL_HANDLE,
         &imageIndex
     );
@@ -676,7 +792,9 @@ Client::Client()
         throw std::runtime_error("Failed to begin recording command buffer!");
     }
 
-    VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
 
     VkRenderPassBeginInfo renderPassBeginInfo{};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -684,15 +802,153 @@ Client::Client()
     renderPassBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
     renderPassBeginInfo.renderArea.offset = {0, 0};
     renderPassBeginInfo.renderArea.extent = capabilities.currentExtent;
-    renderPassBeginInfo.clearValueCount = 1;
-    renderPassBeginInfo.pClearValues = &clearColor;
+    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassBeginInfo.pClearValues = clearValues.data();
+
+    std::vector<Vertex> vertexVector = [&]
+    {
+        auto view = std::views::iota(0u, static_cast<unsigned>(std::size(vertices)))
+            | std::views::transform([&](unsigned int i) {
+                return Vertex{ vertices[i], normals[i] };
+            });
+        return std::vector(view.begin(), view.end());
+    }();
+
+    auto instanceMatrix{glm::mat4(1.0f)};
+
+    VkBuffer vertexBuffer;
+    VkBufferCreateInfo vertexBufferInfo{};
+    vertexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vertexBufferInfo.size = sizeof(Vertex) * vertexVector.size();
+    vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vertexBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &vertexBufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create vertex buffer");
+    }
+
+    VkMemoryRequirements vertexMemoryRequirements;
+    vkGetBufferMemoryRequirements(device, vertexBuffer, &vertexMemoryRequirements);
+
+    uint32_t vertexMemoryTypeIndex = vulkanFindMemoryIndex(
+        vertexMemoryRequirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        physicalDevices[0]
+    );
+
+    VkMemoryAllocateInfo vertexBufferAllocateInfo{};
+    vertexBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    vertexBufferAllocateInfo.allocationSize = vertexMemoryRequirements.size;
+    vertexBufferAllocateInfo.memoryTypeIndex = vertexMemoryTypeIndex;
+
+    VkDeviceMemory vertexBufferMemory;
+
+    if (vkAllocateMemory(device, &vertexBufferAllocateInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate vertex buffer memory");
+    }
+
+    vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+
+    void* mappedData;
+    vkMapMemory(device, vertexBufferMemory, 0, sizeof(Vertex) * vertexVector.size(), 0, &mappedData);
+    memcpy(mappedData, vertexVector.data(), sizeof(Vertex) * vertexVector.size());
+    vkUnmapMemory(device, vertexBufferMemory);
+
+    VkBuffer instanceBuffer;
+    VkBufferCreateInfo instanceInfo{};
+    instanceInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    instanceInfo.size = sizeof(glm::mat4);
+    instanceInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    instanceInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &instanceInfo, nullptr, &instanceBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create vertex buffer");
+    }
+
+    VkMemoryRequirements instanceMemoryRequirements;
+    vkGetBufferMemoryRequirements(device, instanceBuffer, &instanceMemoryRequirements);
+
+    uint32_t memoryTypeIndex = vulkanFindMemoryIndex(
+        instanceMemoryRequirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        physicalDevices[0]
+    );
+
+    VkMemoryAllocateInfo instanceMemoryAllocateInfo{};
+    instanceMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    instanceMemoryAllocateInfo.allocationSize = instanceMemoryRequirements.size;
+    instanceMemoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
+
+    VkDeviceMemory instanceBufferMemory;
+
+    if (vkAllocateMemory(device, &instanceMemoryAllocateInfo, nullptr, &instanceBufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate vertex buffer memory");
+    }
+
+    vkBindBufferMemory(device, instanceBuffer, instanceBufferMemory, 0);
+
+    void* mappedInstanceData;
+    vkMapMemory(device, instanceBufferMemory, 0, sizeof(glm::mat4), 0, &mappedInstanceData);
+    memcpy(mappedInstanceData, &instanceMatrix, sizeof(glm::mat4));
+    vkUnmapMemory(device, instanceBufferMemory);
+
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+
+    VkBufferCreateInfo indexBufferInfo{};
+    indexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    indexBufferInfo.size = sizeof(indices);
+    indexBufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    indexBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &indexBufferInfo, nullptr, &indexBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create index buffer");
+    }
+
+    VkMemoryRequirements indexMemRequirements;
+    vkGetBufferMemoryRequirements(device, indexBuffer, &indexMemRequirements);
+
+    uint32_t indexMemoryTypeIndex = vulkanFindMemoryIndex(
+        indexMemRequirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        physicalDevices[0]
+    );
+
+    VkMemoryAllocateInfo indexAllocInfo{};
+    indexAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    indexAllocInfo.allocationSize = indexMemRequirements.size;
+    indexAllocInfo.memoryTypeIndex = indexMemoryTypeIndex;
+
+    if (vkAllocateMemory(device, &indexAllocInfo, nullptr, &indexBufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate index buffer memory");
+    }
+
+    vkBindBufferMemory(device, indexBuffer, indexBufferMemory, 0);
+
+    void* indexData;
+    vkMapMemory(device, indexBufferMemory, 0, sizeof(indices), 0, &indexData);
+    memcpy(indexData, indices, sizeof(indices));
+    vkUnmapMemory(device, indexBufferMemory);
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = { vertexBuffer, instanceBuffer };
+    VkDeviceSize offsets[] = { 0, 0 };
 
+    vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(
+    commandBuffer,
+    VK_PIPELINE_BIND_POINT_GRAPHICS,
+    pipelineLayout,           // Make sure this is the one used when creating the pipeline
+    0,                        // First set
+    1,                        // Descriptor set count
+    &descriptorSet,           // Your VkDescriptorSet for set 0
+    0, nullptr                // Dynamic offsets (if needed)
+);
+    vkCmdDrawIndexed(commandBuffer, 36, 1, 0, 0, 0);
     vkCmdEndRenderPass(commandBuffer);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -700,9 +956,13 @@ Client::Client()
     }
 
     VkSubmitInfo submitInfo{};
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.waitSemaphoreCount = 1;
 
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
@@ -750,13 +1010,18 @@ Client::Client()
         }
     );
 
-    m_eventManager->subscribeEvent<MousePositionEvent>(
-        [&](MousePositionEvent event) {
-//            m_engine.submit<EntityLookParam>(
-//                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
-//            );
-        }
-    );
+//     m_eventManager->subscribeEvent<MousePositionEvent>(
+//         [&](MousePositionEvent event) {
+// //            m_engine.submit<EntityLookParam>(
+// //                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
+// //            );
+//         }
+//     );
+
+    while (!glfwWindowShouldClose(m_window.get())) {
+        glfwPollEvents();  // Process OS/window/input events
+        // Optionally render your frame here
+    }
 
 
 }
