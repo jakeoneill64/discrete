@@ -6,6 +6,8 @@
 #include <optional>
 #include "engine/world.h"
 
+// TODO for removal!
+// use event system instead
 namespace {
     template<typename T>
     struct ActionHelper {

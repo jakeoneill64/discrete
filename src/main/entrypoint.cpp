@@ -5,5 +5,5 @@
 
 int main(){
 
-    Client client{};
+    Client::instance();
 }

@@ -3,13 +3,18 @@
 
 #include "sqlite3.h"
 #include "util/types.h"
+#include "util/fixed_string.h"
 #include "event/EventManager.h"
+#include "log.h"
+#include "config.h"
+
 #include <string>
 #include <vector>
-#include <cinttypes>
 #include <optional>
+#include <string_view>
 
 using supported_sqlite_types = type_list<sqlite3_int64, double, std::string>;
+using namespace std::literals::string_view_literals;
 
 template<typename Type>
 concept sqlite_type =
@@ -19,6 +24,107 @@ concept sqlite_type =
         contains_type<supported_sqlite_types, typename Type::value_type>::value && // is the contained value a supported_sqlite_types
         std::same_as<Type, std::optional<typename Type::value_type>> // is the container type an optional with a support value type?
     );
+
+template<typename T>
+void bindParameter(sqlite3_stmt* stmt, int index, const T& value);
+
+template<>
+inline void bindParameter<int>(sqlite3_stmt* stmt, int index, const int& value) {
+    sqlite3_bind_int(stmt, index, value);
+}
+
+template<>
+inline void bindParameter<double>(sqlite3_stmt* stmt, int index, const double& value) {
+    sqlite3_bind_double(stmt, index, value);
+}
+
+template<>
+inline void bindParameter<std::string>(sqlite3_stmt* stmt, int index, const std::string& value) {
+    sqlite3_bind_text(stmt, index, value.c_str(), -1, SQLITE_TRANSIENT);
+}
+
+template<>
+inline void bindParameter<sqlite3_int64>(sqlite3_stmt* stmt, int index, const sqlite3_int64& value) {
+    sqlite3_bind_int64(stmt, index, value);
+}
+
+
+template <fixed_string queryStatement, sqlite_type ...TupleTypes, sqlite_type ... BindingTypes>
+auto executeQuery(
+    sqlite3* database,
+    BindingTypes... bindings
+){
+
+    std::tuple<BindingTypes...> bindingTuple{bindings...};
+    sqlite3_stmt* statement;
+
+    if (sqlite3_prepare_v2(database, queryStatement.view().data(),-1,&statement,nullptr) != SQLITE_OK) {
+        log("Failed to prepare statement:" + std::string(sqlite3_errmsg(database)), spdlog::level::err);
+        throw std::runtime_error("Failed to prepare statement: " + std::string(sqlite3_errmsg(database)));
+    }
+
+    [&]<std::size_t... IndexSequence>(std::index_sequence<IndexSequence...>) {
+        (bindParameter(std::get<IndexSequence>(bindingTuple), IndexSequence + 1, std::get<IndexSequence>(bindingTuple)), ...);
+    }(std::index_sequence_for<BindingTypes...>{});
+
+    if constexpr (
+    []{
+        constexpr std::string_view v = queryStatement.view();
+        // TODO equalsIgnoreCase this.
+        return v.find("SELECT") == std::string_view::npos;
+    }()
+    ) {
+        sqlite3_step(statement);
+        sqlite3_finalize(statement);
+    } else
+    {
+
+        std::vector<std::tuple<TupleTypes...>> results;
+
+        while (sqlite3_step(statement) == SQLITE_ROW) {
+            try {
+                results.emplace_back(extractRow<TupleTypes...>(statement));
+            } catch (const std::exception& e) {
+                sqlite3_finalize(statement);
+                log("Failed to extract row: " + std::string(sqlite3_errmsg(database)), spdlog::level::err);
+                throw std::runtime_error("Failed to extract row: " + std::string(e.what()));
+            }
+        }
+
+        sqlite3_finalize(statement);
+        return results;
+
+    }
+
+}
+
+template<sqlite_type ...TupleTypes>
+std::vector<std::tuple<TupleTypes...>> getAllRecords(
+    sqlite3* database,
+    const std::string& table
+){
+    const std::string sql = "SELECT * FROM " + table + ";";
+    sqlite3_stmt* statement;
+
+    if (sqlite3_prepare_v2(database, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK) {
+        throw std::runtime_error("Failed to prepare SQL statement: " + std::string(sqlite3_errmsg(database)));
+    }
+
+    std::vector<std::tuple<TupleTypes...>> results;
+
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        try {
+            results.emplace_back(extractRow<TupleTypes...>(statement));
+        } catch (const std::exception& e) {
+            sqlite3_finalize(statement);
+            throw std::runtime_error("Error extracting row: " + std::string(e.what()));
+        }
+    }
+
+    sqlite3_finalize(statement);
+
+    return results;
+}
 
 template<sqlite_type ...TupleTypes>
 std::optional<std::tuple<TupleTypes...>> getRecord(
@@ -30,7 +136,7 @@ std::optional<std::tuple<TupleTypes...>> getRecord(
     sqlite3_stmt* statement;
 
     sqlite3_prepare_v2(database, sql.c_str(), -1, &statement, nullptr);
-    sqlite3_bind_int64(statement, 1, id);
+    bindParameter(statement, 1, id);
 
     if (sqlite3_step(statement) != SQLITE_ROW) {
         sqlite3_finalize(statement);
@@ -55,13 +161,7 @@ std::optional<std::tuple<TupleTypes...>> getRecord(
     if (sqlite3_prepare_v2(database, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK) {
     }
 
-    if constexpr (std::is_same_v<SqliteType, int>) {
-        sqlite3_bind_int(statement, 1, value);
-    } else if constexpr (std::is_same_v<SqliteType, double>) {
-        sqlite3_bind_double(statement, 1, value);
-    } else if constexpr (std::is_same_v<SqliteType, std::string>) {
-        sqlite3_bind_text(statement, 1, value.c_str(), -1, SQLITE_TRANSIENT);
-    }
+    bindParameter(statement, 1, value);
 
     if (sqlite3_step(statement) != SQLITE_ROW) {
         sqlite3_finalize(statement);
@@ -73,62 +173,32 @@ std::optional<std::tuple<TupleTypes...>> getRecord(
     return result;
 }
 
-template<typename ...TupleTypes>
-std::optional<std::vector<std::tuple<TupleTypes...>>> executeQuery(
-    sqlite3* database,
-    const std::string& queryStatement
-){
-    sqlite3_stmt* statement;
+template <typename MappedType, sqlite_type ValueType>
+std::optional<MappedType> getRecord(sqlite3* database, const std::string& indexName, const ValueType& value)
+{
 
-    sqlite3_prepare_v2(database, queryStatement.c_str(), -1, &statement, nullptr);
+    return rebind_tuple<tuple_type_t<MappedType>>::call([&]<typename... TupleTypes>(
+    ) {
+        return getRecord<ValueType, TupleTypes...>(database, table_name<MappedType>().data(), indexName,  value);
+    })
+    .transform([](const auto& record){
+        return from_tuple<MappedType>(record);
+    });
 
-
-    if (sqlite3_step(statement) != SQLITE_ROW) {
-        sqlite3_finalize(statement);
-        return {};
-    }
-
-    std::vector<std::tuple<TupleTypes...>> results;
-
-    while (sqlite3_step(statement) == SQLITE_ROW) {
-        try {
-            results.emplace_back(extractRow<TupleTypes...>(statement));
-        } catch (const std::exception& e) {
-            sqlite3_finalize(statement);
-            throw std::runtime_error("Error extracting row: " + std::string(e.what()));
-        }
-    }
-
-    sqlite3_finalize(statement);
-    return results;
 }
 
-template<sqlite_type ...TupleTypes>
-std::vector<std::tuple<TupleTypes...>> getAllRecords(
-    sqlite3* database,
-    const std::string& table
-){
-    std::string sql = "SELECT * FROM " + table + ";";
-    sqlite3_stmt* statement;
+template <typename MappedType>
+std::optional<MappedType> getRecord(sqlite3* database, const sqlite3_int64& id)
+{
 
-    if (sqlite3_prepare_v2(database, sql.c_str(), -1, &statement, nullptr) != SQLITE_OK) {
-        throw std::runtime_error("Failed to prepare SQL statement: " + std::string(sqlite3_errmsg(database)));
-    }
+    return rebind_tuple<tuple_type_t<MappedType>>::call([&]<typename... Ts>(
+    ) {
+        return getRecord< Ts...>(database, std::string{table_name<MappedType>().data()}, id);
+    })
+    .transform([](const auto& record){
+        return from_tuple<MappedType>(record);
+    });
 
-    std::vector<std::tuple<TupleTypes...>> results;
-
-    while (sqlite3_step(statement) == SQLITE_ROW) {
-        try {
-            results.emplace_back(extractRow<TupleTypes...>(statement));
-        } catch (const std::exception& e) {
-            sqlite3_finalize(statement);
-            throw std::runtime_error("Error extracting row: " + std::string(e.what()));
-        }
-    }
-
-    sqlite3_finalize(statement);
-
-    return results;
 }
 
 template<sqlite_type T>
@@ -138,8 +208,7 @@ static T convertSQLiteColumn(sqlite3_stmt* preparedStatement, int index) = delet
 template<sqlite_type T>
 requires std::same_as<T, std::optional<typename T::value_type>>
 static std::optional<typename T::value_type> convertSQLiteColumn(sqlite3_stmt* preparedStatement, int index){
-    int type = sqlite3_column_type(preparedStatement, index);
-    if (type != SQLITE_NULL)
+    if (sqlite3_column_type(preparedStatement, index) != SQLITE_NULL)
         return {
             convertSQLiteColumn<typename T::value_type>(preparedStatement, index)
         };
@@ -147,17 +216,17 @@ static std::optional<typename T::value_type> convertSQLiteColumn(sqlite3_stmt* p
 }
 
 template<>
-sqlite3_int64 convertSQLiteColumn<sqlite3_int64>(sqlite3_stmt* preparedStatement, int index) {
+inline sqlite3_int64 convertSQLiteColumn<sqlite3_int64>(sqlite3_stmt* preparedStatement, int index) {
     return sqlite3_column_int64(preparedStatement, index);
 }
 
 template<>
-double convertSQLiteColumn<double>(sqlite3_stmt* preparedStatement, int index) {
+inline double convertSQLiteColumn<double>(sqlite3_stmt* preparedStatement, int index) {
     return sqlite3_column_double(preparedStatement, index);
 }
 
 template<>
-std::string convertSQLiteColumn<std::string>(sqlite3_stmt* preparedStatement, int index) {
+inline std::string convertSQLiteColumn<std::string>(sqlite3_stmt* preparedStatement, int index) {
     return reinterpret_cast<const char*>(sqlite3_column_text(preparedStatement, index));
 }
 

@@ -4,6 +4,7 @@
 #include "Client.h"
 #include "input/input.h"
 #include "persistence/database.h"
+#include "persistence/config.h"
 #include "sqlite3.h"
 #include "render/render.h"
 #include "render/Shader.h"
@@ -11,12 +12,11 @@
 #include "data/basic.vert.spv.h"
 #include "log.h"
 #include "glm/glm.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <string>
 #include <vector>
 #include <ranges>
-#include <iostream>
 #include <span>
 
 Client::Client()
@@ -31,9 +31,7 @@ Client::Client()
           return std::shared_ptr<sqlite3>(db, [](sqlite3* ptr) {
               sqlite3_close(ptr);
           });
-    }()},
-    m_configRepository{m_eventManager, m_database},
-    m_inputRepository{m_eventManager, m_database}
+    }()}
 {
 
     LoggingContext::setLoggerName("client");
@@ -51,22 +49,26 @@ Client::Client()
     // Ensure GLFW doesn't create a openGL context
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>(
+    m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>{
             glfwCreateWindow(
-            m_configRepository["client.window.initial_width"].transform(
-                [](const auto& version){
-                    return std::stoi(version);
+            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.initial_width"}).transform(
+                [](const auto& entry){
+                    return std::stoi(entry.value);
                 }
             ).value_or(800),
-            m_configRepository["client.window.initial_height"].transform(
-                [](const auto& version){
-                    return std::stoi(version);
+            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.initial_height"}).transform(
+                [](const auto& entry){
+                    return std::stoi(entry.value);
                 }
             ).value_or(600),
-            m_configRepository["client.window.name"].value_or("Discrete Engine").c_str(),
+            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.name"}).transform(
+                [](const auto& entry){
+                    return entry.value.c_str();
+                }
+            ).value_or("Discrete Engine"),
             nullptr,
             nullptr)
-    );
+    };
 
     glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow *window, int width, int height) {
         //TODO vulkan adjust viewport / surface
@@ -977,17 +979,17 @@ Client::Client()
     // --- initialise engine ---
 
     // https://www.glfw.org/docs/3.3/input_guide.html
-    glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
-        instance().m_eventManager->publishEvent<KeyEvent>({key, action});
-    });
-
-    glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
-        instance().m_eventManager->publishEvent<MousePositionEvent>({xPos, yPos});
-    });
-
-    glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods){
-        instance().m_eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
-    });
+    // glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
+    //     instance().m_eventManager->publishEvent<KeyEvent>({key, action});
+    // });
+    //
+    // glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
+    //     instance().m_eventManager->publishEvent<MousePositionEvent>({xPos, yPos});
+    // });
+    //
+    // glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods){
+    //     instance().m_eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
+    // });
 
     m_eventManager->subscribeEvent<KeyEvent>(
         [&](const KeyEvent event){
@@ -1027,22 +1029,8 @@ Client::Client()
 }
 
 void Client::loop() {
-    while(m_shouldRun){
-//        uint32_t currentSwapImage;
-//        vkAcquireNextImageKHR(dev, swap, UINT64_MAX, presentCompleteSemaphore, NULL, &currentSwapImage);
-//
-//        VkImageView backbufferView;
-//        vkCreateImageView(dev, &backbufferViewCreateInfo, NULL, &backbufferView);
-//
-//        VkQueue queue;
-//        vkGetDeviceQueue(dev, 0, 0, &queue);
-//
-//        VkRenderPassCreateInfo renderpassCreateInfo = {
-//
-//        };
-//
-//        VkRenderPass renderpass;
-//        vkCreateRenderPass(dev, &renderpassCreateInfo, NULL, &renderpass);
+    while(m_shouldRun && !glfwWindowShouldClose(m_window.get())){
+        glfwPollEvents();
     }
 }
 

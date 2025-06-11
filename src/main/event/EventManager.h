@@ -1,15 +1,11 @@
 #ifndef DISCRETE_EVENTMANAGER_H
 #define DISCRETE_EVENTMANAGER_H
 
-#include <queue>
 #include <any>
 #include <unordered_map>
 #include <typeindex>
 #include <functional>
 #include <shared_mutex>
-#include "util/types.h"
-#include <atomic>
-#include <cinttypes>
 #include "threadpool.h"
 
 class EventManager{
@@ -50,6 +46,8 @@ class EventManager{
             m_callbacksByEventType[std::type_index(typeid(EventType))][sequenceNumber] = wrappedCallback;
             return [this, sequenceNumber](){m_callbacksByEventType[typeid(EventType)].erase(sequenceNumber);};
         }
+
+        EventManager(): m_callbackIdSequence{0}{}
 
     private:
 
