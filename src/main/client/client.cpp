@@ -1,45 +1,61 @@
-#define GLFW_INCLUDE_VULKAN
+#include "client.h"
 
-#include "GLFW/glfw3.h"
-#include "Client.h"
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
+#include "sqlite3.h"
+#include "engine/Engine.h"
 #include "input/input.h"
 #include "persistence/database.h"
 #include "persistence/config.h"
-#include "sqlite3.h"
 #include "render/render.h"
-#include "render/Shader.h"
 #include "data/basic.frag.spv.h"
 #include "data/basic.vert.spv.h"
 #include "log.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 #include <ranges>
 #include <span>
 
-Client::Client()
-:
-    m_shouldRun{true},
-    m_eventManager{std::make_shared<EventManager>()},
-    m_database{[] {
-          sqlite3* db = nullptr;
-          if (sqlite3_open("discrete.db", &db) != SQLITE_OK) {
-              throw std::runtime_error("Failed to open DB");
-          }
-          return std::shared_ptr<sqlite3>(db, [](sqlite3* ptr) {
-              sqlite3_close(ptr);
-          });
-    }()}
+#include "render/VulkanBuffer.h"
+
+
+void DestroyGLFWWindow::operator()(GLFWwindow *ptr) const {
+
+    glfwDestroyWindow(ptr);
+
+}
+
+
+void client_loop()
 {
+    std::atomic_bool shouldRun{true};
+    std::unique_ptr<GLFWwindow, DestroyGLFWWindow> window;
+    uint32_t boundEntityId{};
+    auto eventManager{std::make_shared<EventManager>()};
+    std::shared_ptr<sqlite3> database{[] {
+        sqlite3* db = nullptr;
+        if (sqlite3_open("discrete.db", &db) != SQLITE_OK) {
+            throw std::runtime_error("Failed to open DB");
+        }
+        return std::shared_ptr<sqlite3>(db, [](sqlite3* ptr) {
+            sqlite3_close(ptr);
+        });
+    }()};
+    VkInstance vulkanInstance{};
+    VkDevice device{};
+    Engine engine{[&shouldRun]{shouldRun = false;}};
 
     LoggingContext::setLoggerName("client");
 
     sqlite3_update_hook(
-        m_database.get(),
+        database.get(),
         dbEventCallback,
-        &m_eventManager
+        &eventManager
     );
 
     if(!glfwInit()){
@@ -49,19 +65,19 @@ Client::Client()
     // Ensure GLFW doesn't create a openGL context
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    m_window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>{
+    window = std::unique_ptr<GLFWwindow, DestroyGLFWWindow>{
             glfwCreateWindow(
-            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.initial_width"}).transform(
+            getRecord<ConfigEntry>(database.get(), std::string{"key"}, std::string{"client.window.initial_width"}).transform(
                 [](const auto& entry){
                     return std::stoi(entry.value);
                 }
             ).value_or(800),
-            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.initial_height"}).transform(
+            getRecord<ConfigEntry>(database.get(), std::string{"key"}, std::string{"client.window.initial_height"}).transform(
                 [](const auto& entry){
                     return std::stoi(entry.value);
                 }
             ).value_or(600),
-            getRecord<ConfigEntry>(m_database.get(), std::string{"key"}, std::string{"client.window.name"}).transform(
+            getRecord<ConfigEntry>(database.get(), std::string{"key"}, std::string{"client.window.name"}).transform(
                 [](const auto& entry){
                     return entry.value.c_str();
                 }
@@ -70,7 +86,7 @@ Client::Client()
             nullptr)
     };
 
-    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow *window, int width, int height) {
+    glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow *window, int width, int height) {
         //TODO vulkan adjust viewport / surface
     });
 
@@ -133,14 +149,14 @@ Client::Client()
         allInstanceExtensions.data(),                           // const char* const* ppEnabledExtensionNames;
     };
 
-    if (vkCreateInstance(&instanceCreateInfo, nullptr, &m_vulkanInstance) != VK_SUCCESS) {
+    if (vkCreateInstance(&instanceCreateInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan instance!");
     }
 
     VkDebugUtilsMessengerEXT debugMessenger;
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vulkanInstance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkanInstance, "vkCreateDebugUtilsMessengerEXT");
     if (func) {
-        if (func(m_vulkanInstance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        if (func(vulkanInstance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             throw std::runtime_error("failed to set up debug messenger!");
         }
     }
@@ -148,7 +164,7 @@ Client::Client()
 
     std::vector<VkPhysicalDevice> physicalDevices = vulkanEnumerateList<VkPhysicalDevice>(
         [&](uint32_t* count, VkPhysicalDevice* data){
-            vkEnumeratePhysicalDevices(m_vulkanInstance, count, data);
+            vkEnumeratePhysicalDevices(vulkanInstance, count, data);
         }
     );
 
@@ -269,8 +285,6 @@ Client::Client()
             .pEnabledFeatures = nullptr,
     };
 
-
-    VkDevice device;
     if (vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create device");
@@ -303,7 +317,7 @@ Client::Client()
     }
 
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(m_vulkanInstance, m_window.get(), nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(vulkanInstance, window.get(), nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan surface!");
     }
 
@@ -542,46 +556,19 @@ Client::Client()
     VkDescriptorSet descriptorSet;
     vkAllocateDescriptorSets(device, &descriptorSetAllocateInfo, &descriptorSet);
 
-    VkBuffer uniformBuffer;
-    VkDeviceMemory uniformBufferMemory;
-
-    VkBufferCreateInfo uniformBufferInfo{};
-    uniformBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    uniformBufferInfo.size = 2 * sizeof(glm::mat4);
-    uniformBufferInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    uniformBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &uniformBufferInfo, nullptr, &uniformBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create index buffer");
-    }
-
-    VkMemoryRequirements uniformBufferMemoryRequirements;
-    vkGetBufferMemoryRequirements(device, uniformBuffer, &uniformBufferMemoryRequirements);
-
-    uint32_t uboMemoryTypeIndex = vulkanFindMemoryIndex(
-        uniformBufferMemoryRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        physicalDevices[0]
-    );
-
-    VkMemoryAllocateInfo uniformBufferMemoryAllocateInfo{};
-    uniformBufferMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    uniformBufferMemoryAllocateInfo.allocationSize = uniformBufferMemoryRequirements.size;
-    uniformBufferMemoryAllocateInfo.memoryTypeIndex = uboMemoryTypeIndex;
-
-    if (vkAllocateMemory(device, &uniformBufferMemoryAllocateInfo, nullptr, &uniformBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to allocate index buffer memory");
-    }
-
-    vkBindBufferMemory(device, uniformBuffer, uniformBufferMemory, 0);
-
-    void* uniformData;
+    VulkanBuffer uniformBuffer{
+        device,
+        physicalDevices[0],
+        2 * sizeof(glm::mat4),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    };
 
     glm::mat4 viewMatrix = glm::lookAt(
     glm::vec3(0.0f, 3.0f, 5.0f),
     glm::vec3(1.0f, 0.0f, 1.0f),
     glm::vec3(0.0f, 1.0f, 0.0f)
-);
+    );
 
     glm::mat4 projectionMatrix = glm::perspective(
         glm::radians(45.0f),
@@ -591,12 +578,10 @@ Client::Client()
     );
 
     std::array<glm::mat4, 2> matrices{viewMatrix, projectionMatrix};
-    vkMapMemory(device, uniformBufferMemory, 0, 2 * sizeof(glm::mat4), 0, &uniformData);
-    memcpy(uniformData, matrices.data(), 2 * sizeof(glm::mat4));
-    vkUnmapMemory(device, uniformBufferMemory);
+    uniformBuffer.upload(matrices.data(), sizeof(matrices));
 
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = uniformBuffer;
+    bufferInfo.buffer = uniformBuffer.m_buffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(glm::mat4) * 2;
 
@@ -762,51 +747,6 @@ Client::Client()
         swapchainFramebuffers.push_back(framebuffer);
     }
 
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkSemaphore imageAvailableSemaphore;
-    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create semaphore!");
-    }
-
-
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(
-        device,
-        swapchain,
-        UINT64_MAX,
-        imageAvailableSemaphore,
-        VK_NULL_HANDLE,
-        &imageIndex
-    );
-
-    if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to acquire swapchain image!");
-    }
-
-    vkResetCommandBuffer(commandBuffer, 0);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to begin recording command buffer!");
-    }
-
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
-
-    VkRenderPassBeginInfo renderPassBeginInfo{};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = renderPass;
-    renderPassBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
-    renderPassBeginInfo.renderArea.offset = {0, 0};
-    renderPassBeginInfo.renderArea.extent = capabilities.currentExtent;
-    renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassBeginInfo.pClearValues = clearValues.data();
-
     std::vector<Vertex> vertexVector = [&]
     {
         auto view = std::views::iota(0u, static_cast<unsigned>(std::size(vertices)))
@@ -818,226 +758,177 @@ Client::Client()
 
     auto instanceMatrix{glm::mat4(1.0f)};
 
-    VkBuffer vertexBuffer;
-    VkBufferCreateInfo vertexBufferInfo{};
-    vertexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    vertexBufferInfo.size = sizeof(Vertex) * vertexVector.size();
-    vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    vertexBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &vertexBufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create vertex buffer");
-    }
-
-    VkMemoryRequirements vertexMemoryRequirements;
-    vkGetBufferMemoryRequirements(device, vertexBuffer, &vertexMemoryRequirements);
-
-    uint32_t vertexMemoryTypeIndex = vulkanFindMemoryIndex(
-        vertexMemoryRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        physicalDevices[0]
+    VulkanBuffer indexBuffer(
+        device,
+        physicalDevices[0],
+        sizeof(indices),
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
 
-    VkMemoryAllocateInfo vertexBufferAllocateInfo{};
-    vertexBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    vertexBufferAllocateInfo.allocationSize = vertexMemoryRequirements.size;
-    vertexBufferAllocateInfo.memoryTypeIndex = vertexMemoryTypeIndex;
+    indexBuffer.upload(indices, sizeof(indices));
 
-    VkDeviceMemory vertexBufferMemory;
-
-    if (vkAllocateMemory(device, &vertexBufferAllocateInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to allocate vertex buffer memory");
-    }
-
-    vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
-
-    void* mappedData;
-    vkMapMemory(device, vertexBufferMemory, 0, sizeof(Vertex) * vertexVector.size(), 0, &mappedData);
-    memcpy(mappedData, vertexVector.data(), sizeof(Vertex) * vertexVector.size());
-    vkUnmapMemory(device, vertexBufferMemory);
-
-    VkBuffer instanceBuffer;
-    VkBufferCreateInfo instanceInfo{};
-    instanceInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    instanceInfo.size = sizeof(glm::mat4);
-    instanceInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    instanceInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &instanceInfo, nullptr, &instanceBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create vertex buffer");
-    }
-
-    VkMemoryRequirements instanceMemoryRequirements;
-    vkGetBufferMemoryRequirements(device, instanceBuffer, &instanceMemoryRequirements);
-
-    uint32_t memoryTypeIndex = vulkanFindMemoryIndex(
-        instanceMemoryRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        physicalDevices[0]
+    VulkanBuffer vertexBuffer(
+        device,
+        physicalDevices[0],
+    sizeof(Vertex) * vertexVector.size(),
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
 
-    VkMemoryAllocateInfo instanceMemoryAllocateInfo{};
-    instanceMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    instanceMemoryAllocateInfo.allocationSize = instanceMemoryRequirements.size;
-    instanceMemoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
+    vertexBuffer.upload(vertexVector.data(), sizeof(Vertex) * vertexVector.size());
 
-    VkDeviceMemory instanceBufferMemory;
-
-    if (vkAllocateMemory(device, &instanceMemoryAllocateInfo, nullptr, &instanceBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to allocate vertex buffer memory");
-    }
-
-    vkBindBufferMemory(device, instanceBuffer, instanceBufferMemory, 0);
-
-    void* mappedInstanceData;
-    vkMapMemory(device, instanceBufferMemory, 0, sizeof(glm::mat4), 0, &mappedInstanceData);
-    memcpy(mappedInstanceData, &instanceMatrix, sizeof(glm::mat4));
-    vkUnmapMemory(device, instanceBufferMemory);
-
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
-
-    VkBufferCreateInfo indexBufferInfo{};
-    indexBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    indexBufferInfo.size = sizeof(indices);
-    indexBufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    indexBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &indexBufferInfo, nullptr, &indexBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create index buffer");
-    }
-
-    VkMemoryRequirements indexMemRequirements;
-    vkGetBufferMemoryRequirements(device, indexBuffer, &indexMemRequirements);
-
-    uint32_t indexMemoryTypeIndex = vulkanFindMemoryIndex(
-        indexMemRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        physicalDevices[0]
+    VulkanBuffer instanceBuffer(
+        device,
+        physicalDevices[0],
+        sizeof(glm::mat4),
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
 
-    VkMemoryAllocateInfo indexAllocInfo{};
-    indexAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    indexAllocInfo.allocationSize = indexMemRequirements.size;
-    indexAllocInfo.memoryTypeIndex = indexMemoryTypeIndex;
-
-    if (vkAllocateMemory(device, &indexAllocInfo, nullptr, &indexBufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to allocate index buffer memory");
-    }
-
-    vkBindBufferMemory(device, indexBuffer, indexBufferMemory, 0);
-
-    void* indexData;
-    vkMapMemory(device, indexBufferMemory, 0, sizeof(indices), 0, &indexData);
-    memcpy(indexData, indices, sizeof(indices));
-    vkUnmapMemory(device, indexBufferMemory);
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-    VkBuffer vertexBuffers[] = { vertexBuffer, instanceBuffer };
-    VkDeviceSize offsets[] = { 0, 0 };
-
-    vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-    vkCmdBindDescriptorSets(
-    commandBuffer,
-    VK_PIPELINE_BIND_POINT_GRAPHICS,
-    pipelineLayout,           // Make sure this is the one used when creating the pipeline
-    0,                        // First set
-    1,                        // Descriptor set count
-    &descriptorSet,           // Your VkDescriptorSet for set 0
-    0, nullptr                // Dynamic offsets (if needed)
-);
-    vkCmdDrawIndexed(commandBuffer, 36, 1, 0, 0, 0);
-    vkCmdEndRenderPass(commandBuffer);
-
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to record command buffer!");
-    }
-
-    VkSubmitInfo submitInfo{};
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.waitSemaphoreCount = 1;
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &swapchain;
-    presentInfo.pImageIndices = &imageIndex;
-
-    vkQueuePresentKHR(graphicsQueue, &presentInfo);
+    instanceBuffer.upload(&instanceMatrix, sizeof(glm::mat4));
 
     // --- initialise engine ---
 
-    // https://www.glfw.org/docs/3.3/input_guide.html
-    // glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
-    //     instance().m_eventManager->publishEvent<KeyEvent>({key, action});
-    // });
-    //
-    // glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos){
-    //     instance().m_eventManager->publishEvent<MousePositionEvent>({xPos, yPos});
-    // });
-    //
-    // glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int button, int action, int mods){
-    //     instance().m_eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
-    // });
+    glfwSetWindowUserPointer(window.get(), eventManager.get());
 
-    m_eventManager->subscribeEvent<KeyEvent>(
+    // https://www.glfw.org/docs/3.3/input_guide.html
+    glfwSetKeyCallback(window.get(), [](GLFWwindow* window, int key, int scancode, int action, int mods){
+        auto *eventManager = static_cast<EventManager*>(glfwGetWindowUserPointer(window));
+        eventManager->publishEvent<KeyEvent>({key, action});
+    });
+
+    glfwSetCursorPosCallback(window.get(), [](GLFWwindow* window, double xPos, double yPos){
+        auto *eventManager = static_cast<EventManager*>(glfwGetWindowUserPointer(window));
+        eventManager->publishEvent<MousePositionEvent>({xPos, yPos});
+    });
+
+    glfwSetMouseButtonCallback(window.get(), [](GLFWwindow* window, int button, int action, int mods){
+        auto *eventManager = static_cast<EventManager*>(glfwGetWindowUserPointer(window));
+        eventManager->publishEvent<MouseButtonEvent>({button, action, mods});
+    });
+
+    eventManager->subscribeEvent<KeyEvent>(
         [&](const KeyEvent event){
         if(event.action != GLFW_REPEAT && event.action != GLFW_PRESS)
             return;
-//        m_engine.submit(
-//            m_inputRepository[GLFW_KEY_MAPPINGS.at(event.key),
-//            m_engine.getInputContext(m_boundEntityId)]
+//        engine.submit(
+//            inputRepository[GLFW_KEY_MAPPINGS.at(event.key),
+//            engine.getInputContext(boundEntityId)]
 //        );
     });
 
-    m_eventManager->subscribeEvent<MouseButtonEvent>(
+    eventManager->subscribeEvent<MouseButtonEvent>(
         [&](KeyEvent event) {
             if (event.action != GLFW_REPEAT && event.action != GLFW_PRESS)
                 return;
-//            m_engine.submit<void>(
-//                    m_inputRepository[GLFW_MOUSE_BUTTON_MAPPINGS.at(event.key),
-//                            m_engine.getInputContext(m_boundEntityId)]
+//            engine.submit<void>(
+//                    inputRepository[GLFW_MOUSE_BUTTON_MAPPINGS.at(event.key),
+//                            engine.getInputContext(boundEntityId)]
 //            );
         }
     );
 
-//     m_eventManager->subscribeEvent<MousePositionEvent>(
+//     eventManager->subscribeEvent<MousePositionEvent>(
 //         [&](MousePositionEvent event) {
-// //            m_engine.submit<EntityLookParam>(
-// //                    std::make_unique<EntityLook>(EntityLook{{m_boundEntityId, event.xPos, event.yPos}})
+// //            engine.submit<EntityLookParam>(
+// //                    std::make_unique<EntityLook>(EntityLook{{boundEntityId, event.xPos, event.yPos}})
 // //            );
 //         }
 //     );
 
-    while (!glfwWindowShouldClose(m_window.get())) {
-        glfwPollEvents();  // Process OS/window/input events
-        // Optionally render your frame here
-    }
-
-
-}
-
-void Client::loop() {
-    while(m_shouldRun && !glfwWindowShouldClose(m_window.get())){
+    while (!glfwWindowShouldClose(window.get())) {
         glfwPollEvents();
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkSemaphore imageAvailableSemaphore;
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create semaphore!");
+        }
+
+
+        uint32_t imageIndex;
+        VkResult result = vkAcquireNextImageKHR(
+            device,
+            swapchain,
+            UINT64_MAX,
+            imageAvailableSemaphore,
+            VK_NULL_HANDLE,
+            &imageIndex
+        );
+
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to acquire swapchain image!");
+        }
+
+        vkResetCommandBuffer(commandBuffer, 0);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to begin recording command buffer!");
+        }
+
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+
+        VkRenderPassBeginInfo renderPassBeginInfo{};
+        renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassBeginInfo.renderPass = renderPass;
+        renderPassBeginInfo.framebuffer = swapchainFramebuffers[imageIndex];
+        renderPassBeginInfo.renderArea.offset = {0, 0};
+        renderPassBeginInfo.renderArea.extent = capabilities.currentExtent;
+        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassBeginInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+        VkBuffer vertexBuffers[] = { vertexBuffer.m_buffer, instanceBuffer.m_buffer };
+        VkDeviceSize offsets[] = { 0, 0 };
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 2, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer.m_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineLayout,
+        0,
+        1,
+        &descriptorSet,
+        0, nullptr
+    );
+        vkCmdDrawIndexed(commandBuffer, 36, 1, 0, 0, 0);
+        vkCmdEndRenderPass(commandBuffer);
+
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to record command buffer!");
+        }
+
+        VkSubmitInfo submitInfo{};
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.waitSemaphoreCount = 1;
+
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &swapchain;
+        presentInfo.pImageIndices = &imageIndex;
+
+        vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
     }
-}
-
-
-
-void DestroyGLFWWindow::operator()(GLFWwindow *ptr) const {
-
-    glfwDestroyWindow(ptr);
 
 }

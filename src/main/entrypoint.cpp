@@ -1,9 +1,7 @@
 
-#include "server/server.h"
-#include "client/Client.h"
-#include <future>
+#include "client/client.h"
 
 int main(){
 
-    Client::instance();
+    client_loop();
 }

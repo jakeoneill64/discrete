@@ -12,3 +12,6 @@ template<typename ActionType>
 void Engine::submit(std::unique_ptr<Action<ActionType>> action) {
     action->operator();
 }
+
+Engine::Engine(const std::function<void()>& exitCallback): m_exitCallback{exitCallback}{}
+

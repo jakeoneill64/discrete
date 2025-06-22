@@ -1,24 +1,26 @@
 #ifndef DISCRETE_WORLD_H
 #define DISCRETE_WORLD_H
 
-#include "voxel.h"
-#include <vector>
 #include <memory>
 #include <filesystem>
 #include <expected>
+#include <unordered_map>
+#include <cinttypes>
 
+#include "Entity.h"
 
 class World {
 public:
     std::byte voxels;
 
 private:
-    //KDTree<Voxel> for efficient spacial lookup
+    std::unordered_map<uint32_t, Entity> m_entitiesById;
 };
 
 struct WorldView
 {
     //immutable view of a world. memory efficient.
+    std::unordered_map<uint32_t, Entity> m_entitiesById;
 };
 
 
