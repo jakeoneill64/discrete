@@ -41,7 +41,7 @@ concept AllSame = (std::same_as<Nodes, Node> && ...);
  * @tparam Node
  */
 template <typename Node>
-class KDTree {
+class kd_tree {
 public:
 
     std::shared_ptr<Node> insert(const Node& node){

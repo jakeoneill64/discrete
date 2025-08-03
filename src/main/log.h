@@ -4,6 +4,8 @@
 #include <string>
 #include "spdlog/spdlog.h"
 
+// TODO reconsider if this is the best course of action.
+// how are you planning to fork the config?
 class LoggingContext {
 public:
     static void setLoggerName(const std::string& name);

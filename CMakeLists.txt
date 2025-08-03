@@ -18,6 +18,8 @@ set(SUBMODULE_ARTIFACTS
         ${CMAKE_SOURCE_DIR}/lib/libgmock.a
         ${CMAKE_SOURCE_DIR}/lib/libglm.a
         ${CMAKE_SOURCE_DIR}/lib/libgtest.a
+        ${CMAKE_SOURCE_DIR}/lib/libgmock_main.a
+        ${CMAKE_SOURCE_DIR}/lib/libgtest_main.a
         ${CMAKE_SOURCE_DIR}/lib/libspdlog.a
 
         ${CMAKE_SOURCE_DIR}/include/GLFW/glfw3.h
@@ -85,6 +87,33 @@ target_include_directories(
         PRIVATE
         ${sqlite_SOURCE_DIR}
 )
+
+set(PYTHON_VENV_DIR "${CMAKE_SOURCE_DIR}/.venv")
+if(NOT EXISTS "${PYTHON_VENV_DIR}/bin/python")
+    execute_process(
+            COMMAND python3 -m venv "${PYTHON_VENV_DIR}"
+            RESULT_VARIABLE VENV_CREATE_RESULT
+    )
+    if(NOT VENV_CREATE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to create Python virtual environment")
+    endif()
+endif()
+
+set(Python3_ROOT_DIR "${PYTHON_VENV_DIR}")
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+string(FIND "${Python3_EXECUTABLE}" "${PYTHON_VENV_DIR}" FOUND_INDEX)
+if(NOT FOUND_INDEX EQUAL 0)
+    message(FATAL_ERROR
+            "Python3_EXECUTABLE does not match venv path\n"
+            "  Expected prefix: ${PYTHON_VENV_DIR}\n"
+            "  Found: ${Python3_EXECUTABLE}")
+else ()
+    execute_process(
+            COMMAND "${Python3_EXECUTABLE}" -m pip install --upgrade pip
+            COMMAND "${Python3_EXECUTABLE}" -m pip install -r ${CMAKE_SOURCE_DIR}/requirements.txt
+    )
+endif()
 
 add_executable(discrete)
 target_sources(discrete PRIVATE ${SOURCE})
@@ -166,6 +195,15 @@ foreach(RESOURCE_FILE ${RESOURCES})
     )
 endforeach()
 
+# TODO want to check that the file actually gets generated, but will leave this
+# until I have a cohesive persistence strategy across the engine and game modules.
+add_custom_target(
+        generate_config
+        COMMAND "${Python3_EXECUTABLE}" scripting/map_config_content.py
+        --input=resources/config/default.yaml --output=scripting/database/config_content.sql
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
 add_custom_command(
         OUTPUT ${SUBMODULE_ARTIFACTS}
         COMMAND scripting/deploy_modules.sh
@@ -175,7 +213,7 @@ add_custom_command(
 add_custom_target(deploy_modules ALL DEPENDS ${SUBMODULE_ARTIFACTS})
 add_custom_target(build_actions
         ALL
-        COMMAND python3 scripting/build_actions.py
+        COMMAND "${Python3_EXECUTABLE}" scripting/build_actions.py
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action
                 ${CMAKE_CURRENT_SOURCE_DIR}/src/main/engine/action/registration.h
         USES_TERMINAL
@@ -189,9 +227,8 @@ foreach(TEST_FILE ${TEST})
     get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
 
     # TODO rename this script, jesus
-    # TODO this python invocation is tightly coupled, let's see if we can loosen this up.
     execute_process(
-        COMMAND /usr/local/bin/python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripting/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
+        COMMAND "${Python3_EXECUTABLE}" ${CMAKE_CURRENT_SOURCE_DIR}/scripting/parse_link_deps.py ${TEST_FILE} ${CMAKE_CURRENT_LIST_DIR}
         OUTPUT_VARIABLE LINK_DEPS
         ECHO_OUTPUT_VARIABLE
     )
@@ -200,7 +237,9 @@ foreach(TEST_FILE ${TEST})
 
     add_executable(${TEST_NAME} ${TEST_SOURCES})
 
-    target_link_libraries(${TEST_NAME} gtest.a)
+    target_link_directories(${TEST_NAME} PRIVATE lib)
+    target_link_libraries(${TEST_NAME} gtest.a gtest_main.a)
+    target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/main)
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()

@@ -41,7 +41,6 @@ buildGoogleTest(){
 
     for file in lib/*
     do
-      [[ "$file" =~ .*main.a ]] && continue
       cp "$file" ../../lib/
     done
 

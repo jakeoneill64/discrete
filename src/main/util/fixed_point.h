@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <algorithm>
 
-constexpr bool is_base_2(uint64_t number){
+constexpr bool is_base_2(const uint64_t number){
     return (number != 1) && ((number & (number - 1)) == 0);
 }
 
@@ -27,7 +27,7 @@ constexpr uint64_t power(uint64_t number, uint8_t index){
 template <
         std::size_t size,
         uint64_t scaling_factor_inverse,
-        typename = typename std::enable_if_t<is_base_2(scaling_factor_inverse)>,
+        typename = std::enable_if_t<is_base_2(scaling_factor_inverse)>,
         typename UnderlyingIntegerType =
             typename std::conditional_t<(size == 16),
                 std::int16_t,

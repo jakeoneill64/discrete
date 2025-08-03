@@ -1,0 +1,21 @@
+client:
+  logger:
+    name: "discrete engine"
+    level: "debug"
+  window:
+    name: "discrete engine"
+    initial_width: "800"
+    initial_height: "600"
+
+vulkan:
+  validation_layers: "VK_LAYER_KHRONOS_validation"
+  device_extensions:
+    - "VK_KHR_spirv_1_4"
+    - "VK_KHR_shader_float_controls"
+    - "VK_KHR_swapchain"
+    - "VK_KHR_portability_subset"
+  instance_extensions:
+    - "VK_KHR_get_physical_device_properties2"
+    - "VK_KHR_portability_enumeration"
+    - "VK_EXT_debug_utils"
+

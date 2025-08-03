@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <variant>
 #include <tuple>
+#include <vector>
 
 template < typename ... >
 struct type_list {};
@@ -25,6 +26,9 @@ struct add_type<T, type_list<Ts...>> {
     using type = type_list<Ts..., T>;
 };
 
+template<typename List, typename T>
+concept type_in_list = contains_type<List, T>::value;
+
 template<typename Tuple>
 struct rebind_tuple;
 
@@ -39,8 +43,22 @@ struct rebind_tuple<std::tuple<Ts...>> {
     }
 };
 
-template<typename List, typename T>
-concept type_in_list = contains_type<List, T>::value;
+template <typename T>
+concept is_vector = requires {
+    typename T::value_type;
+    requires std::is_same_v<T, std::vector<typename T::value_type, typename T::allocator_type>>;
+};
+
+template <typename List>
+struct to_variant;
+
+template <typename... Ts>
+struct to_variant<type_list<Ts...>> {
+    using type = std::variant<Ts...>;
+};
+
+template <typename List>
+using to_variant_t = typename to_variant<List>::type;
 
 template <typename T>
 void hash_combine(std::size_t& seed, const T& value) {

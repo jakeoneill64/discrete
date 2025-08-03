@@ -12,6 +12,9 @@
 #include <vector>
 #include <optional>
 #include <string_view>
+#include <ranges>
+
+#include "util/json.h"
 
 using supported_sqlite_types = type_list<sqlite3_int64, double, std::string>;
 using namespace std::literals::string_view_literals;
@@ -96,6 +99,16 @@ auto executeQuery(
 
     }
 
+}
+
+template<typename MappedType>
+std::vector<MappedType> getAllRecords(
+    sqlite3* database
+){
+    return rebind_tuple<tuple_type_t<MappedType>>::call([&]<typename... Ts>(
+    ) {
+        return getAllRecords< Ts...>(database, std::string{table_name<MappedType>().data()});
+    });
 }
 
 template<sqlite_type ...TupleTypes>
