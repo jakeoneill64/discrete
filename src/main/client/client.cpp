@@ -61,7 +61,7 @@ void client_loop()
         &eventManager
     );
 
-    std::function fetchConfig = [&database]()
+    std::function fetchConfig = [&database]
     {
         const auto recordTuples = getAllRecords<ConfigEntry>(database.get()) |
             std::views::transform([](const ConfigEntry& entry)
@@ -104,89 +104,7 @@ void client_loop()
         //TODO vulkan adjust viewport / surface
     });
 
-    std::vector<VkQueueFamilyProperties> deviceQueueFamilies = vulkanEnumerateList<VkQueueFamilyProperties>(
-        [&](uint32_t* count, VkQueueFamilyProperties* data){
-            vkGetPhysicalDeviceQueueFamilyProperties(chosenDevice, count, data);
-        }
-    );
 
-    std::optional<uint32_t> selectedQueueFamilyIndex;
-    for (uint32_t i = 0; i < deviceQueueFamilies.size(); ++i) {
-        if (deviceQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            selectedQueueFamilyIndex = i;
-            break;
-        }
-    }
-
-    if(!selectedQueueFamilyIndex){
-        throw std::runtime_error("No queue families support graphics operations");
-    }
-
-    float queuePriority = 1.0f;
-    VkDeviceQueueCreateInfo queueCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        .queueFamilyIndex = *selectedQueueFamilyIndex,
-        .queueCount = 1,
-        .pQueuePriorities = &queuePriority,
-    };
-
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
-
-
-    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
-    bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
-
-    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures{};
-    accelStructFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-    accelStructFeatures.accelerationStructure = VK_TRUE;
-
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
-    rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-    rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
-
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
-    descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-    descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 deviceFeatures2{};
-    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    deviceFeatures2.features = deviceFeatures;
-
-    bufferDeviceAddressFeatures.pNext = &accelStructFeatures;
-    accelStructFeatures.pNext = &rayTracingPipelineFeatures;
-    rayTracingPipelineFeatures.pNext = &descriptorIndexingFeatures;
-    deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
-
-    VkDeviceCreateInfo deviceCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-            .pNext = &deviceFeatures2,
-            .queueCreateInfoCount = 1,
-            .pQueueCreateInfos = &queueCreateInfo,
-            .enabledExtensionCount = static_cast<uint32_t>(DEVICE_EXTENSIONS.size()),
-            .ppEnabledExtensionNames = DEVICE_EXTENSIONS.data(),
-            .pEnabledFeatures = nullptr,
-    };
-
-    if (vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &device) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create device");
-    }
-
-    VkQueue graphicsQueue;
-    vkGetDeviceQueue(device, *selectedQueueFamilyIndex, 0, &graphicsQueue);
-
-    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
-    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolCreateInfo.queueFamilyIndex = *selectedQueueFamilyIndex;
-    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create command pool!");
-    }
 
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
     commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

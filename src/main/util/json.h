@@ -19,16 +19,34 @@ using JsonArray = std::vector<JsonNode>;
 using JsonObject = std::unordered_map<std::string, JsonNode>;
 
 using JsonValueTypes = type_list<
-        bool,
-        int,
-        double,
-        std::string,
-        std::shared_ptr<JsonArray>,
-        std::shared_ptr<JsonObject>
+    bool,
+    int,
+    double,
+    std::string,
+    std::shared_ptr<JsonArray>,
+    std::shared_ptr<JsonObject>
+>;
+
+using JsonScalarTypes = type_list<
+    bool,
+    int,
+    double,
+    std::string
 >;
 
 template <typename T>
 concept valid_json_type = contains_type<JsonValueTypes, T>::value;
+
+template <typename T>
+concept json_scalar_type = contains_type<JsonScalarTypes, T>::value;
+
+template <typename T>
+concept json_scalar_vector_type =
+    requires {
+    typename T::value_type;
+    requires json_scalar_type<typename T::value_type>;
+    requires std::same_as<T, std::vector<typename T::value_type>>;
+    };
 
 enum JsonNodeError
 {
@@ -39,6 +57,7 @@ enum JsonNodeError
     InternalError
 };
 
+// TODO const correctness needs to be considered, specifically looking at operator[]
 class JsonNode
 {
 
@@ -69,14 +88,8 @@ public:
     }
 
     template <valid_json_type NodeType>
-    std::expected<NodeType, JsonNodeError> as(){
-
-        const bool nonScalar =
-                std::holds_alternative<std::shared_ptr<JsonObject>>(m_value) ||
-                std::holds_alternative<std::shared_ptr<JsonArray>>(m_value);
-
-        if (nonScalar)
-            return std::get<NodeType>(m_value);
+    [[nodiscard]]
+    std::expected<NodeType, JsonNodeError> as() const{
 
         if (std::holds_alternative<NodeType>(m_value))
             return std::get<NodeType>(m_value);
@@ -84,20 +97,35 @@ public:
         return std::unexpected{IncorrectType};
     }
 
-    // special case, if we want a vector / json array but the node is a scalar
-    // we will nicely wrap it for the user
-    template <>
-    std::expected<std::shared_ptr<JsonArray>, JsonNodeError> as(){
-        const bool nonScalar =
-                std::holds_alternative<std::shared_ptr<JsonObject>>(m_value) ||
-                std::holds_alternative<std::shared_ptr<JsonArray>>(m_value);
+    // convenience method for scalar lists.
+    template <json_scalar_vector_type VectorType>
+    [[nodiscard]]
+    std::expected<VectorType, JsonNodeError> as() const
+    {
+        // the only case this method doesn't support is when the
+        // wrapped value is a JsonObject. Scalars, we wrap in a vector
+        // if the user wants a vector.
+        if (std::holds_alternative<std::shared_ptr<JsonObject>>(m_value))
+            return std::unexpected{IncorrectType};
 
-        if (!nonScalar)
-            return std::make_shared<JsonArray>(
-                JsonArray{ JsonNode{m_value} }
-            );
+        using ScalarType = typename VectorType::value_type;
 
-        return std::unexpected{IncorrectType};
+        std::shared_ptr underlyingList{
+            std::holds_alternative<std::shared_ptr<JsonArray>>(m_value) ?
+            std::get<std::shared_ptr<JsonArray>>(m_value) :
+            std::make_shared<JsonArray>(1, *this)
+        };
+
+        std::vector<ScalarType> transformedVector{};
+
+        for (const auto& potentialScalar : *underlyingList){
+            std::expected<ScalarType, JsonNodeError> scalar = potentialScalar.as<ScalarType>();
+            if (!scalar)
+                return std::unexpected{scalar.error()};
+            transformedVector.push_back(*scalar);
+        }
+
+        return transformedVector;
     }
 
     /** Take something of the form [("hi.mummy", "value")] and
@@ -145,6 +173,11 @@ public:
 
     // NOLINTNEXTLINE to implement if I ever plan to use
     std::expected<std::shared_ptr<JsonNode>, JsonNodeError> parse(const std::string& json);
+
+    template <valid_json_type Type>
+    [[nodiscard]] std::expected<Type, JsonNodeError> operator()(Type x) const{
+        return as<Type>(x);
+    }
 
 private:
     const static std::regex KEY_REGEX;
@@ -249,5 +282,21 @@ private:
 
 
 };
+
+// special case, if we want a vector / json array but the node is a scalar
+// we will nicely wrap it for the user
+template <>
+inline std::expected<std::shared_ptr<JsonArray>, JsonNodeError> JsonNode::as() const{
+    const bool isNonScalar =
+            std::holds_alternative<std::shared_ptr<JsonObject>>(m_value) ||
+            std::holds_alternative<std::shared_ptr<JsonArray>>(m_value);
+
+    if (!isNonScalar)
+        return std::make_shared<JsonArray>(
+            JsonArray{ JsonNode{m_value} }
+        );
+
+    return std::unexpected{IncorrectType};
+}
 
 #endif //JSON_H

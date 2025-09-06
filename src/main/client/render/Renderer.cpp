@@ -1,8 +1,56 @@
 #include "Renderer.h"
+#include "client/render/VulkanRenderer.h"
 #include "client/render/vulkan.h"
-#include <vulkan/vulkan.h>
+#include "GLFW/glfw3.h"
+#include "engine/Engine.h"
+#include "persistence/database.h"
+#include "log.h"
+#include "glm/glm.hpp"
 
-RendererBase::RendererBase() {
+#include <vulkan/vulkan.h>
+#include <ranges>
+
+
+PartialVulkanRenderer::PartialVulkanRenderer(const std::function<std::expected<JsonNode, JsonNodeError>()>& fetchConfig) {
+
+    const auto currentConfig = fetchConfig();
+
+    std::vector<const char*> validationLayers = currentConfig
+        .and_then([](JsonNode& node) {
+            return node["vulkan.device_extensions"];
+        })
+        .and_then([](const JsonNode& node) {
+            return node.as<std::vector<std::string>>();
+        })
+       .value_or({"VK_LAYER_KHRONOS_validation"});
+
+    std::vector<const char*> deviceExtensions = currentConfig
+        .and_then([](JsonNode& node) {
+            return node["vulkan.device_extensions"];
+        })
+        .and_then([](const JsonNode& node) {
+            return node.as<std::vector<std::string>>();
+        })
+       .value_or({
+           "VK_KHR_spirv_1_4",
+           "VK_KHR_shader_float_controls",
+           "VK_KHR_swapchain",
+           "VK_KHR_portability_subset"
+       });
+
+    std::vector<const char*> instanceExtensions = currentConfig
+        .and_then([](JsonNode& node) {
+            return node["vulkan.instance_extensions"];
+        })
+        .and_then([](const JsonNode& node) {
+            return node.as<std::vector<std::string>>();
+        })
+       .value_or({
+           "VK_KHR_get_physical_device_properties2",
+           "VK_KHR_portability_enumeration",
+           "VK_EXT_debug_utils"
+       });
+
     const auto availableValidationLayerNames = vulkanEnumerateList<VkLayerProperties>(
         []
             (uint32_t* count, VkLayerProperties* data){
@@ -12,7 +60,8 @@ RendererBase::RendererBase() {
             return std::string_view{layer.layerName};
         });
 
-    std::ranges::for_each(VALIDATION_LAYERS, [&availableValidationLayerNames](auto &layer){
+    // TODO do we really want to throw if the validation layer's not available?
+    std::ranges::for_each(validationLayers, [&availableValidationLayerNames](auto &layer){
         if(std::find(availableValidationLayerNames.begin(), availableValidationLayerNames.end(), layer) == availableValidationLayerNames.end())
             throw std::runtime_error(std::string("Validation layer ") + layer + " not available.");
     });
@@ -27,16 +76,14 @@ RendererBase::RendererBase() {
                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     debugCreateInfo.pfnUserCallback = vulkanDebugCallback;
 
-#endif
-
     uint32_t glfwExtensionCount{0};
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> allInstanceExtensions{glfwExtensions, glfwExtensions + glfwExtensionCount};
-    allInstanceExtensions.insert(allInstanceExtensions.end(), INSTANCE_EXTENSIONS.begin(), INSTANCE_EXTENSIONS.end());
+    allInstanceExtensions.insert(allInstanceExtensions.end(), instanceExtensions.begin(), instanceExtensions.end());
 
     VkApplicationInfo applicationInfo = {
-        .apiVersion =VK_API_VERSION_1_1,
-        .pApplicationName = "Discrete Engine"
+        .apiVersion =VK_API_VERSION_1_1, // TODO config item
+        .pApplicationName = "Discrete Engine" // TODO config item
     };
 
     VkInstanceCreateInfo instanceCreateInfo = {
@@ -50,8 +97,8 @@ RendererBase::RendererBase() {
         VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,       // VkInstanceCreateFlags flags;
         &applicationInfo,                                                // const VkApplicationInfo* pApplicationInfo;
 #ifdef DISCRETE_DEBUG
-        static_cast<uint32_t>(VALIDATION_LAYERS.size()),
-        VALIDATION_LAYERS.data(),
+        static_cast<uint32_t>(validationLayers.size()),
+        validationLayers.data(),
 #else
         0,                                      // uint32_t enabledLayerNameCount;
         nullptr,                                // const char* const* ppEnabledLayerNames;
@@ -60,26 +107,25 @@ RendererBase::RendererBase() {
         allInstanceExtensions.data(),                           // const char* const* ppEnabledExtensionNames;
     };
 
-    if (vkCreateInstance(&instanceCreateInfo, nullptr, &vulkanInstance) != VK_SUCCESS) {
+    if (vkCreateInstance(&instanceCreateInfo, nullptr, &m_instance) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan instance!");
     }
 
     VkDebugUtilsMessengerEXT debugMessenger;
-    auto func = static_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(vulkanInstance, "vkCreateDebugUtilsMessengerEXT"));
+    auto func = static_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT"));
     if (func) {
-        if (func(vulkanInstance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        if (func(m_instance, &debugCreateInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             throw std::runtime_error("failed to set up debug messenger!");
         }
     }
 
-
     std::vector<VkPhysicalDevice> physicalDevices = vulkanEnumerateList<VkPhysicalDevice>(
         [&](uint32_t* count, VkPhysicalDevice* data){
-            vkEnumeratePhysicalDevices(vulkanInstance, count, data);
+            vkEnumeratePhysicalDevices(m_instance, count, data);
         }
     );
 
-    VkPhysicalDevice chosenDevice{physicalDevices[0]};
+    m_physicalDevice = physicalDevices[0];
     for(const auto &physicalDevice : physicalDevices){
         // TODO select based on:
         // Discrete GPU, RTX capability, Compute Shaders, Memory Capacity, Speed
@@ -128,6 +174,91 @@ RendererBase::RendererBase() {
                 vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, count, data);
             });
 
+    }
+
+    std::vector<VkQueueFamilyProperties> deviceQueueFamilies = vulkanEnumerateList<VkQueueFamilyProperties>(
+        [&](uint32_t* count, VkQueueFamilyProperties* data){
+            vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, count, data);
+        }
+    );
+
+    std::optional<uint32_t> selectedQueueFamilyIndex;
+    for (uint32_t i = 0; i < deviceQueueFamilies.size(); ++i) {
+        if (deviceQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            selectedQueueFamilyIndex = i;
+            break;
+        }
+    }
+
+    if(!selectedQueueFamilyIndex){
+        throw std::runtime_error("No queue families support graphics operations");
+    }
+
+    m_graphicsQueueFamilyIndex = *selectedQueueFamilyIndex;
+
+    float queuePriority = 1.0f;
+    VkDeviceQueueCreateInfo queueCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        .queueFamilyIndex = m_graphicsQueueFamilyIndex,
+        .queueCount = 1,
+        .pQueuePriorities = &queuePriority,
+    };
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+    bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelStructFeatures{};
+    accelStructFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    accelStructFeatures.accelerationStructure = VK_TRUE;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
+    rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
+    descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+    descriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2 deviceFeatures2{};
+    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    deviceFeatures2.features = deviceFeatures;
+
+    bufferDeviceAddressFeatures.pNext = &accelStructFeatures;
+    accelStructFeatures.pNext = &rayTracingPipelineFeatures;
+    rayTracingPipelineFeatures.pNext = &descriptorIndexingFeatures;
+    deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
+
+    VkDeviceCreateInfo deviceCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = &deviceFeatures2,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = &queueCreateInfo,
+            .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+            .ppEnabledExtensionNames = deviceExtensions.data(),
+            .pEnabledFeatures = nullptr,
+    };
+
+    if (vkCreateDevice(physicalDevices[0], &deviceCreateInfo, nullptr, &m_device) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create device");
+    }
+
+    VkQueue graphicsQueue;
+    vkGetDeviceQueue(m_device, *selectedQueueFamilyIndex, 0, &graphicsQueue);
+
+    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.queueFamilyIndex = *selectedQueueFamilyIndex;
+    commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    if (vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create command pool!");
     }
 }
 

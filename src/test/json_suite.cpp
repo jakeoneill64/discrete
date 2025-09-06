@@ -29,27 +29,49 @@ TEST_P(UnflattenParamTest, HandlesFlattenedInputCorrectly) {
     validate(result.value());
 }
 
-// TEST_P(UnflattenErrorTest, HandlesInvalidInputs) {
-//     const auto& [input, expectedError] = GetParam();
-//     auto result = JsonNode::unflatten(input);
-//     ASSERT_FALSE(result.has_value());
-//     ASSERT_EQ(result.error(), expectedError);
-// }
-
+// TODO should segregate these properly.
 INSTANTIATE_TEST_SUITE_P(
     ValidJsonTests,
     UnflattenParamTest,
     ::testing::Values(
+        // single nested entry, single string scalar retrieval
         UnflattenCase{
             {{"vulkan.device_extensions", "VK_KHR_swapchain"}},
             [](JsonNode root) {
-                const std::expected<JsonNode, JsonNodeError> device_extensions{root["vulkan.device_extensions"]};
-                ASSERT_TRUE(device_extensions.has_value());
-                JsonNode x = device_extensions.value();
-                const auto& c = x.as<std::string>();
-                ASSERT_EQ(c, "VK_KHR_swapchain");
+                const auto& expectedStringResult =
+                    root["vulkan.device_extensions"]
+                        .and_then([](const JsonNode& deviceExtensionsNode){
+                                return deviceExtensionsNode.as<std::string>();
+                            }
+                        );
+                ASSERT_TRUE(expectedStringResult.has_value());
+                ASSERT_EQ(expectedStringResult.value(), "VK_KHR_swapchain");
+            }
+        },
+        UnflattenCase{
+            {{"vulkan.device_extensions", "VK_KHR_swapchain"}},
+            [](JsonNode root) {
+                const auto& expectedStringResult =
+                    root["vulkan.device_extensions"]
+                        .and_then([](const JsonNode& deviceExtensionsNode){
+                                return deviceExtensionsNode.as<std::vector<std::string>>();
+                            }
+                        );
+                    ASSERT_TRUE(expectedStringResult.has_value());
+                    ASSERT_EQ(expectedStringResult.value(), std::vector<std::string>{"VK_KHR_swapchain"});
+
             }
         }
+        // UnflattenCase{
+        //     {{"vulkan.device_extensions", "VK_KHR_swapchain"}},
+        //     [](JsonNode root) {
+        //         const std::expected<JsonNode, JsonNodeError> device_extensions{root["vulkan.device_extensions"]};
+        //         ASSERT_TRUE(device_extensions.has_value());
+        //         const JsonNode& deviceExtensionNode = device_extensions.value();
+        //         const auto& singletonVector = deviceExtensionNode.as<std::shared_ptr<JsonArray>>();
+        //         ASSERT_EQ(*singletonVector, JsonArray{JsonNode{"VK_KHR_swapchain"}});
+        //     }
+        // }
         )
 );
 

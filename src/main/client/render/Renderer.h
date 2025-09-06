@@ -13,32 +13,13 @@
 // config layer -> discrete engine renderer factory <- game specific things {shaders}
 //                               |
 //                            Renderer
-class VulkanBase
-{
-public:
-    VulkanBase();
-private:
 
-};
 
 class DiscreteRenderer
 {
 public:
     virtual ~DiscreteRenderer() = default;
-    virtual void draw(std::unique_ptr<WorldView> worldView);
-};
-
-class VulkanRenderer final : public DiscreteRenderer
-{
-
-public:
-    void draw(std::unique_ptr<WorldView> worldView) override;
-    ~VulkanRenderer() override;
-    friend class RenderBase;
-
-private:
-    VulkanRenderer();
-
+    virtual void operator()(std::unique_ptr<WorldView> worldView);
 };
 
 #endif //RENDERER_H
