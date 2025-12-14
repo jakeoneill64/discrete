@@ -5,8 +5,8 @@
 
 struct VulkanBuffer {
 
-    VkBuffer m_buffer{};
-    VkDeviceMemory m_memory{};
+    VkBuffer m_buffer;
+    VkDeviceMemory m_memory;
     VkDevice m_device;
 
     VulkanBuffer(VkDevice device, VkPhysicalDevice physicalDevice,
